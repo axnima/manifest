@@ -1,0 +1,7 @@
+opportunity_id,fictional_customer,stage,contract_value_usd,probability_percent,weighted_contract_value_usd,expected_close_date
+OPP-001,Alder Systems,Negotiation,180000,50,90000,2026-10-18
+OPP-002,Northstar Labs,Contract review,120000,75,90000,2026-10-22
+OPP-003,Harbor Analytics,Discovery,90000,30,27000,2026-10-30
+OPP-004,Cedar Logistics,Proposal,75000,60,45000,2026-10-16
+OPP-005,Lumen Retail,Discovery,60000,20,12000,2026-10-28
+OPP-006,Juniper Works,Discovery,45000,20,9000,2026-10-31

@@ -1,0 +1,19 @@
+{
+  "name": "manifest-finance",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Document chat and Gemini-generated dashboards",
+  "scripts": {
+    "start": "python3 scripts/server.py",
+    "dev": "npm start",
+    "test": "node tests/model.test.cjs && node tests/compiler.test.cjs && python3 -m unittest discover -s tests -p \"test_*.py\" && node --check public/app.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "esbuild": "^0.28.2",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  }
+}

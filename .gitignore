@@ -2,4 +2,10 @@
 .env.*
 !.env.example
 node_modules/
-*.tar.gz
+.local-artifacts/
+*.log
+.DS_Store
+playwright-report/
+test-results/
+__pycache__/
+*.pyc

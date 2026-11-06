@@ -1,0 +1,69 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const {spawn}=require('node:child_process');
+const {chromium}=require(process.argv[2]||'playwright');
+const root=path.join(__dirname,'..');
+(async()=>{
+  const server=spawn('python3',['scripts/server.py','--port','0'],{cwd:root,stdio:['ignore','pipe','pipe']});
+  let browser;
+  try{
+    const origin=await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('Server startup timed out')),10000);server.stdout.on('data',chunk=>{const match=String(chunk).match(/http:\/\/localhost:\d+/);if(match){clearTimeout(timer);resolve(match[0]);}});server.once('error',reject);});
+    browser=await chromium.launch({headless:true,...(process.argv[3]?{executablePath:process.argv[3]}:{})});
+    const page=await browser.newPage({viewport:{width:1440,height:1100}});
+    const errors=[];page.on('pageerror',e=>errors.push(e.message));
+    let calls=0,mode='normal',context,parts,latestSource,compileCalls=0,networkLeaks=0;
+    await page.route('**/api/diagnostics',route=>route.fulfill({json:{saved:true}}));
+    await page.route('**/api/compile',async route=>{compileCalls++;const request=route.request();assert.deepEqual(Object.keys(request.postDataJSON()),['source']);assert.equal(request.headers()['x-goog-api-key'],undefined);assert.ok(!request.postData().includes('test-key'));await route.continue();});
+    await page.route('https://example.com/**',async route=>{networkLeaks++;await route.abort();});
+    await page.route('https://generativelanguage.googleapis.com/**',async route=>{
+      calls++;assert.equal(route.request().headers()['x-goog-api-key'],'test-key');
+      parts=route.request().postDataJSON().contents[0].parts;context=JSON.parse(parts.at(-1).text);
+      if(mode==='truncated'){await route.fulfill({json:{candidates:[{finishReason:'MAX_TOKENS'}]}});return;}
+      let source=`import {useState,useEffect} from 'react';
+export default function App(){
+ const [count,setCount]=useState(0);const [network,setNetwork]=useState('checking');
+ let access='';try{access=parent.document.getElementById('api-key').value}catch{access='blocked'}
+ useEffect(()=>{fetch('https://example.com/should-not-leak').then(()=>setNetwork('bad')).catch(()=>setNetwork('blocked'))},[]);
+ return <main style={{padding:24,background:'#fff1f8',fontFamily:'system-ui'}}><h1 style={{color:'#db2777'}}>Projected profits</h1><svg aria-label="Pink profit graph" width="260" height="120"><rect width="80" height="100" fill="#db2777"/></svg><p>Source: finance-team-memo.pdf</p><button onClick={()=>setCount(count+1)}>Explore {count}</button><p id="parent-access">Parent access: {access}</p><p id="network">Network: {network}</p></main>;
+}`;
+      if(mode==='followup')source="export default function App(){return <section><h1>Revised React view</h1><p>Updated from the previous source.</p></section>}";
+      if(mode==='invalid')source='export default function App(){return <div>}';
+      if(mode==='runtime')source="export default function App(){throw new Error('Test render failure')}";
+      latestSource=source;
+      await route.fulfill({json:{responseId:'test-response',candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify({title:'Profit view',reply:'Here is the custom React view.',source})}]}}]}});
+    });
+    await page.goto(origin);
+    const [chooser]=await Promise.all([page.waitForEvent('filechooser'),page.locator('#file-input').click()]);
+    await chooser.setFiles(path.join(root,'samples/finance/finance-team-memo.pdf'));
+    await page.waitForFunction(()=>document.getElementById('upload-status').textContent.includes('Loaded 1'));
+    await page.locator('#api-key').fill('test-key');await page.locator('#prompt').fill('Project profits and make the graph pink.');await page.locator('#generate').click();
+    const frame=page.frameLocator('#preview-frame');
+    await frame.getByRole('heading',{name:'Projected profits'}).waitFor({timeout:20000});
+    await page.waitForFunction(()=>document.getElementById('status').textContent.includes('React is running'));
+    assert.equal(await frame.locator('rect').evaluate(el=>getComputedStyle(el).fill),'rgb(219, 39, 119)');
+    await frame.getByRole('button',{name:'Explore 0'}).click();await frame.getByRole('button',{name:'Explore 1'}).waitFor();
+    assert.equal(await frame.locator('#parent-access').innerText(),'Parent access: blocked');
+    await frame.getByText('Network: blocked',{exact:true}).waitFor();assert.equal(networkLeaks,0);
+    assert.equal(await page.locator('#preview-frame').getAttribute('sandbox'),'allow-scripts');
+    assert.equal(parts.find(p=>p.inlineData).inlineData.mimeType,'application/pdf');
+    assert.equal(calls,1);assert.equal(compileCalls,1);
+    const firstSource=latestSource;
+    await page.locator('#schema-tab').click();assert.equal(await page.locator('#schema').innerText(),firstSource);await page.locator('#preview-tab').click();
+    const download=page.waitForEvent('download');await page.locator('#export').click();assert.equal((await download).suggestedFilename(),'GeneratedApp.jsx');
+    mode='invalid';await page.locator('#prompt').fill('Update this');await page.locator('#generate').click();
+    await page.waitForFunction(()=>document.getElementById('status').textContent.includes('Compilation failed'));
+    assert.equal(await frame.getByRole('heading',{name:'Projected profits'}).count(),1);
+    assert.equal(context.previousModule,firstSource);
+    mode='followup';await page.locator('#prompt').fill('Replace the graph with a summary');await page.locator('#generate').click();
+    await page.frameLocator('#preview-frame').getByRole('heading',{name:'Revised React view'}).waitFor();
+    assert.equal(context.previousModule.source,'export default function App(){return <div>}');assert.ok(context.previousModule.compilationError.includes('Compilation failed'));assert.equal(context.conversation.length,2);
+    mode='truncated';await page.locator('#prompt').fill('Expand the analysis');await page.locator('#generate').click();await page.waitForFunction(()=>document.getElementById('status').textContent.includes('MAX_TOKENS'));
+    assert.equal(await page.frameLocator('#preview-frame').getByRole('heading',{name:'Revised React view'}).count(),1);
+    mode='runtime';await page.locator('#prompt').fill('Try another');await page.locator('#generate').click();await page.waitForFunction(()=>document.getElementById('status').textContent.includes('failed at runtime'));
+    assert.ok((await page.locator('#chat-log').innerText()).includes('Test render failure'));
+    await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+    assert.deepEqual(errors,[]);
+    console.log('Browser checks passed: real backend compilation, pink JSX/SVG, React hooks, parent-key isolation, network blocking, source/export, follow-ups, compile/runtime/truncation errors, mobile. Gemini responses intercepted; no live inference.');
+  }finally{if(browser)await browser.close();server.kill('SIGTERM');}
+})().catch(e=>{console.error(e);process.exitCode=1;});

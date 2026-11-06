@@ -1,0 +1,4 @@
+month,opening_cash_usd,customer_collections_usd,supplier_payments_usd,operating_payments_usd,capital_expenditure_usd,tax_payments_usd,net_cash_change_usd,closing_cash_usd
+2026-07,500000,325000,100000,158000,20000,10000,37000,537000
+2026-08,537000,390000,120000,170000,25000,15000,60000,597000
+2026-09,597000,445000,140000,184000,30000,20000,71000,668000
