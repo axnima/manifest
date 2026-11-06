@@ -31,7 +31,7 @@ function renderSource() {
   const root=$('dashboard');root.replaceChildren();
   $('preview-state').textContent=documents.length?'Files ready · ask a question':'Waiting for your files';
   const panel=node('div','empty-state');
-  panel.append(node('span','empty-symbol','▤'),node('h2','',documents.length?'What would you like to do?':'Start with a document.'),node('p','',documents.length?'Tell me what to extract, explain, compare, or visualize. No analysis has been sent to Gemini yet.':'Upload documents, spreadsheets, images, or text, then ask a question.'));
+  panel.append(node('span','empty-symbol','▤'),node('h2','',documents.length?'What would you like to do?':'Start with a document.'),node('p','',documents.length?'Tell me what to extract, explain, compare, or visualize. No analysis has been sent to 0G yet.':'Upload documents, spreadsheets, images, or text, then ask a question.'));
   root.append(panel);
   for(const doc of documents){
     const section=node('section','generated-card');section.append(node('h3','',doc.name),node('p','method-note',doc.description));
@@ -81,7 +81,7 @@ function renderDashboard() {
   previewTimer=setTimeout(()=>{if($('preview-frame')===frame){$('status').textContent='Compiled React has not mounted yet. Inspect the generated source or ask for a simpler component.';}},10000);
   $('schema').textContent=generated.source;
   $('preview-state').textContent='React compiled on the local server';$('component-count').textContent='Isolated React preview';
-  $('provenance').textContent=`${generated.meta.model} · ${generated.meta.responseId||'No provider response ID'} · ${generated.javascript.length.toLocaleString()} bundled characters`;
+  $('provenance').textContent=`${generated.meta.model} · private routing · Request ${generated.meta.responseId||generated.meta.requestId} · ${generated.meta.usage?.total_tokens??'?'} tokens${generated.meta.estimatedCostUsd!=null?' · estimated $'+generated.meta.estimatedCostUsd.toFixed(5):''}`;
   $('export').disabled=false;
 }
 addEventListener('message',event=>{
@@ -92,7 +92,7 @@ addEventListener('message',event=>{
     const text=typeof event.data.message==='string'?event.data.message.slice(0,1500):'Unknown runtime error';
     failedAttempt={source:generated.source,runtimeError:text};
     recordDiagnostics({requestId:generated.meta.requestId,model:generated.meta.model,stage:'runtime',success:false});
-    message('error','React runtime error: '+text);$('status').textContent='The generated component failed at runtime. Ask Gemini to fix the error.';
+    message('error','React runtime error: '+text);$('status').textContent='The generated component failed at runtime. Ask 0G to fix the error.';
   }else{$('status').textContent='Generated React is running. Ask a follow-up to change it.';}
 });
 async function compileReact(source) {
@@ -114,24 +114,24 @@ function setBusy(value) {
   document.querySelectorAll('.remove-file,[data-prompt]').forEach(button=>button.disabled=value);
   $('dashboard').setAttribute('aria-busy',String(value));
 }
-async function recordDiagnostics(data) {
+async function recordDiagnostics(data,persist=true) {
   $('diagnostics-output').textContent=JSON.stringify(data,null,2);
+  if(!persist){$('diagnostics-status').textContent='Backend recorded inference metadata in .local-artifacts/inference.jsonl';return;}
   $('diagnostics-status').textContent='Saving local diagnostics…';
   try {
     const response=await fetch('/api/diagnostics',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data),signal:AbortSignal.timeout(3000)});
     if(!response.ok)throw new Error('Log save failed');
-    $('diagnostics-status').textContent='Saved to .local-artifacts/gemini.jsonl';
+    $('diagnostics-status').textContent='Saved to .local-artifacts/inference.jsonl';
   }catch{$('diagnostics-status').textContent='Could not save diagnostics. Restart with npm start; details remain below.';}
 }
 $('prompt-form').onsubmit=async event=>{
   event.preventDefault();if(busy)return;
-  const prompt=$('prompt').value.trim(),apiKey=$('api-key').value.trim();
+  const prompt=$('prompt').value.trim();
   if(!documents.length){uploadStatus('Upload a file first.',true);return;}
-  if(!apiKey){$('connection').open=true;$('api-key').focus();$('status').textContent='Enter your Gemini API key. Use a Free Tier project to avoid charges.';return;}
   if(!prompt){$('status').textContent='Enter a message first.';return;}
-  setBusy(true);message('user',prompt);$('status').textContent='Sending your data and message to Gemini. Waiting for React source…';
+  setBusy(true);message('user',prompt);$('status').textContent='Sending your data and message to 0G. Waiting for React source…';
   try {
-    const result=await DocumentModel.generate({apiKey,documents,prompt,history,previous:failedAttempt??generated?.source??null,signal:AbortSignal.timeout(90000),onDiagnostics:recordDiagnostics});
+    const result=await DocumentModel.generate({documents,prompt,history,previous:failedAttempt??generated?.source??null,signal:AbortSignal.timeout(200000),onDiagnostics:data=>recordDiagnostics(data,false)});
     $('status').textContent='React received. Compiling on the local server…';
     let javascript;
     const compileStarted=Date.now();
@@ -144,7 +144,7 @@ $('prompt-form').onsubmit=async event=>{
     failedAttempt=null;
     await recordDiagnostics({requestId:result.meta.requestId,model:result.meta.model,stage:'compile',success:true,durationMs:Date.now()-compileStarted});
     generated={...result,javascript};history.push({role:'user',text:prompt},{role:'assistant',text:result.reply});history=history.slice(-8);
-    renderDashboard();setTab(false);message('assistant',result.reply);$('prompt').value='';$('connection').open=false;
+    renderDashboard();setTab(false);message('assistant',result.reply);$('prompt').value='';
     $('status').textContent='React compiled. Starting the isolated preview…';
   }catch(error){message('error',error.message);$('status').textContent=error.message+(generated?' The previous dashboard is unchanged.':' No dashboard was generated.');}
   finally{setBusy(false);$('prompt').focus();}
@@ -160,8 +160,6 @@ $('load-sample').onclick=async()=>{
 };
 for(const event of ['dragenter','dragover'])$('dropzone').addEventListener(event,e=>{e.preventDefault();if(!busy)$('dropzone').classList.add('dragging');});
 for(const event of ['dragleave','drop'])$('dropzone').addEventListener(event,e=>{e.preventDefault();$('dropzone').classList.remove('dragging');if(event==='drop'&&!busy)upload(Array.from(e.dataTransfer.files));});
-$('api-key').oninput=()=>{$('connection-status').textContent=$('api-key').value.trim()?'Key entered · unverified':'Key needed';};
-$('clear-key').onclick=()=>{$('api-key').value='';$('api-key').oninput();$('status').textContent='Key cleared. An in-flight request, if any, may still finish.';};
 $('reset-chat').onclick=()=>{if(!busy){resetChat();$('status').textContent='Conversation cleared. Your attached files are still available.';}};
 document.querySelectorAll('[data-prompt]').forEach(button=>button.onclick=()=>{$('prompt').value=button.dataset.prompt;$('prompt').focus();});
 $('preview-tab').onclick=()=>setTab(false);$('schema-tab').onclick=()=>setTab(true);

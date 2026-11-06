@@ -2,7 +2,7 @@
   "name": "manifest-finance",
   "version": "0.1.0",
   "private": true,
-  "description": "Document chat and Gemini-generated dashboards",
+  "description": "Document chat and 0G-generated dashboards",
   "scripts": {
     "start": "python3 scripts/server.py",
     "dev": "npm start",

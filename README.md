@@ -4,10 +4,12 @@ Manifest Finance turns uploaded documents into custom React dashboards. Upload f
 
 ## Run locally
 
-Requirements: Node.js 20+ with npm, Python 3, and a Gemini API key for live analysis. Install the React and compiler dependencies once. There is no frontend build step: each generated component is compiled on demand by the local backend.
+Requirements: Node.js 20+ with npm, Python 3, and a mainnet 0G API key for live analysis. Install the React and compiler dependencies once. PDF text extraction also requires `pdftotext` (Poppler; `poppler-utils` on Debian/Ubuntu or `poppler` on Arch). There is no frontend build step: each generated component is compiled on demand by the local backend.
 
 ```sh
 npm install
+cp .env.example .env
+# Edit .env and supply your mainnet 0G API key.
 npm start
 ```
 
@@ -23,19 +25,29 @@ Use a different port if needed. Edit `public/` and refresh to see changes.
 
 ## Use
 
-1. Enter your Gemini API key in **Connect Gemini**. Free Tier quotas apply; a billing-enabled key can incur charges.
+1. Configure `.env` at the repository root, then restart `npm start`:
+
+   ```dotenv
+   ZERO_G_API_KEY=your_mainnet_api_key
+   ZERO_G_BASE_URL=https://router-api.0g.ai/v1
+   ZERO_G_MODEL=0gm-1.0-35b-a3b
+   ```
+
+   Process environment variables override `.env`. Values are literal, optionally quoted; shell expansion is not supported. Keep `.env` private; Git ignores it.
 2. Choose or drag files into **Upload files**. Up to 5 files, 4 MB per file, 8 MB total.
 3. Ask what you need: “Summarize this memo,” “Compare expenses with the budget,” “Extract the action items into a table,” or “Forecast next month and explain your assumptions.”
 4. Inspect the answer, source/method notes, and the React source tab. Ask follow-ups to refine it.
 
-Files stay in session memory. Text/Office parsing occurs locally; file content and conversation context go directly to Google when you send a message. Your API key is not saved in the repository or sent to the local extraction server. Refreshing clears the key, documents, and chat. Use fictional data for tests; this is not private 0G inference.
+Files and conversations stay in session memory. The browser calls the same-origin `/api/generate` endpoint. The backend holds the key and sends document text/images, conversation, and previous source to 0G with `X-0G-Provider-Trust-Mode: private`. It never silently falls back to another provider or lower trust tier. The backend handles plaintext; this is not end-to-end encryption of the whole app. Use fictional data during testing.
+
+Generation is limited to one in-flight request and 6,000 output tokens, with a 180-second provider timeout and no automatic retries. A timeout or closing the tab does not guarantee cancellation of provider billing. Receipts show provider/local request IDs, requested private routing, token usage, and an estimated cost for 0GM based on current promotional rates ($0.08/M input, $0.48/M output). This is an estimate, not a billing balance or verified attestation; prices can change. Check actual credits in your 0G dashboard.
 
 ## Supported files
 
 | Files | Handling |
 | --- | --- |
-| PDF | Sent as PDF bytes for Gemini document understanding, including scans; no local PDF text extraction. |
-| PNG, JPEG, WebP | Sent as image bytes for Gemini visual understanding. |
+| PDF | Extracted locally using `pdftotext`, up to 100 pages; larger PDFs are rejected. Temporary files are removed after extraction. Scanned PDFs need conversion to text or images. |
+| PNG, JPEG, WebP | Sent through the backend as native image input; requires a vision-capable model such as the configured 0GM model. |
 | CSV, TSV, JSON, TXT, Markdown, HTML, XML, source code and other UTF-8 text | Decoded locally and sent as text, without a prescribed column schema. HTML and code are never executed. |
 | DOCX, XLSX, PPTX, ODT | Text/cached cell values extracted by the local Python server in memory. |
 
@@ -66,20 +78,20 @@ Optional browser integration checks with an existing Playwright installation and
 node tests/browser.test.cjs /absolute/path/to/playwright /absolute/path/to/chrome
 ```
 
-Tests use controlled provider responses; a live Gemini run requires your own key. Browser tests launch and stop an isolated local server.
+Tests use controlled provider responses; a live 0G run uses your configured key and compute credits. Browser tests launch and stop an isolated local server.
 
 ## Limits
 
-Gemini returns real React JSX in a JSON envelope (`title`, `reply`, `source`). The local backend uses esbuild to compile and bundle React; it does not execute the generated module. The browser runs the bundle in an iframe with only `allow-scripts`, an opaque origin, and a restrictive CSP. The generated preview has no access to the parent DOM/API key and ordinary network requests are blocked. Only React imports are allowed; write charts with SVG and styles with inline CSS. Arbitrary packages and external assets are not available. Export downloads `GeneratedApp.jsx`. Compilation errors retain the previous working preview; runtime errors appear in chat. Failed source/error context is sent on follow-ups so Gemini can repair it. Source references, extracted numbers, and model calculations are not independently verified. Forecasts must label assumptions and estimated points. A local linear-trend helper is supplied only when a forecast is requested on the original `month,revenue_usd` sample schema; all other calculations are model-generated. This is a prototype, not an audited financial system.
+0G returns real React JSX in a JSON envelope (`title`, `reply`, `source`). The local backend uses esbuild to compile and bundle React; it does not execute the generated module. The browser runs the bundle in an iframe with only `allow-scripts`, an opaque origin, and a restrictive CSP. The generated preview has no access to the parent DOM/API key and ordinary network requests are blocked. Only React imports are allowed; write charts with SVG and styles with inline CSS. Arbitrary packages and external assets are not available. Export downloads `GeneratedApp.jsx`. Compilation errors retain the previous working preview; runtime errors appear in chat. Failed source/error context is sent on follow-ups so 0G can repair it. Source references, extracted numbers, and model calculations are not independently verified. Forecasts must label assumptions and estimated points. A local linear-trend helper is supplied only when a forecast is requested on the original `month,revenue_usd` sample schema; all other calculations are model-generated. This is a prototype, not an audited financial system.
 
 Generated code is still untrusted: sandboxing does not prevent every browser resource-exhaustion issue, such as an infinite loop. Keep this as a local prototype; shared production execution needs stronger isolation and resource controls.
 
-## Gemini diagnostics
+## 0G diagnostics
 
-Restart `npm start` after updating. Every completed Gemini attempt sends technical metadata to the local server, which writes `.local-artifacts/gemini.jsonl`. Logs rotate at 1 MB with two backups. They are ignored by Git and not served as public files.
+Restart `npm start` after updating. The backend logs technical metadata for every inference attempt to `.local-artifacts/inference.jsonl`. Logs rotate at 1 MB with two backups. They are ignored by Git and not served as public files.
 
 ```sh
-tail -n 10 .local-artifacts/gemini.jsonl
+tail -n 10 .local-artifacts/inference.jsonl
 ```
 
 The app's **Request diagnostics** panel shows the latest entry and whether it was saved. Entries include a local request ID, UTC timestamp, model, duration, HTTP status, provider response ID, finish/block reason, processing stage, output length, and token counts when available. Prompts, file names/content, API keys, and generated response text are excluded. If saving fails, the app still displays the diagnostics and original provider result/error. Requests made before this feature was installed cannot be recovered.
