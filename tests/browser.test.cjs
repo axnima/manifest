@@ -34,7 +34,11 @@ export default function App(){
       await route.fulfill({json:{title:'Profit view',reply:'Here is the custom React view.',source,meta:{requestId:'local-id',model:'0gm-1.0-35b-a3b',responseId:'test-response',trustMode:'private',usage:{total_tokens:2000},estimatedCostUsd:0.001}}});
     });
     await page.goto(origin);
-    const [chooser]=await Promise.all([page.waitForEvent('filechooser'),page.locator('#file-input').click()]);
+    assert.equal(await page.title(),'manifest HQ');
+    assert.equal(await page.locator('#file-input').evaluate(el=>getComputedStyle(el).opacity),'0');
+    await page.locator('#file-input').focus();
+    assert.equal(await page.locator('#dropzone').evaluate(el=>getComputedStyle(el).outlineStyle),'solid');
+    const [chooser]=await Promise.all([page.waitForEvent('filechooser'),page.keyboard.press('Enter')]);
     await chooser.setFiles(path.join(root,'samples/finance/finance-team-memo.pdf'));
     await page.waitForFunction(()=>document.getElementById('upload-status').textContent.includes('Loaded 1'));
     await page.locator('#prompt').fill('Project profits and make the graph pink.');await page.locator('#generate').click();

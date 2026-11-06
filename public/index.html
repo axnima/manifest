@@ -4,9 +4,9 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="Upload files and ask 0G to analyze, summarize, compare, or visualize their contents.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
-  <meta name="referrer" content="no-referrer"><title>Manifest HQ — Document studio</title>
-  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=1">
-  <meta name="theme-color" content="#162b25">
+  <meta name="referrer" content="no-referrer"><title>manifest HQ</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=2">
+  <meta name="theme-color" content="#242320">
   <link rel="stylesheet" href="style.css"><script src="model.js?v=0g-1" defer></script><script src="app.js?v=0g-1" defer></script>
 </head>
 <body>
@@ -25,7 +25,7 @@
 <main id="studio">
   <header class="topbar"><div>Workspace <span class="slash">/</span> <strong>Document studio</strong></div><span class="demo-pill"><i></i> 0G · private routing</span></header>
   <div class="page">
-    <div class="page-heading"><div><p class="eyebrow">GENERATIVE INTELLIGENCE</p><h1>Your data. A conversation.</h1><p class="subtitle">Ask a question. Watch your dashboard take shape.</p></div><span class="version">STUDIO / 002</span></div>
+    <div class="page-heading"><div><p class="eyebrow">YOUR DOCUMENT WORKSPACE</p><h1>manifest HQ</h1><p class="subtitle">Ask a question. Watch your dashboard take shape.</p></div><span class="version">STUDIO / 002</span></div>
     <div class="studio-layout">
       <section class="builder" aria-label="Data and chat">
         <div class="section-label"><span class="step">01</span><h2>Bring your files</h2></div>
@@ -33,7 +33,7 @@
         <div id="sources" class="sources">
           <div class="sample-actions"><a href="sample-quarterly-revenue.csv" download>↓ Download sample CSV</a><button id="load-sample" type="button">Use sample</button></div>
           <div id="file-list"></div>
-          <label class="upload" id="dropzone"><span class="upload-icon" aria-hidden="true">↥</span><strong>Upload files</strong><span>Choose files or drag them here</span><small>PDF, images, text, CSV, DOCX, XLSX, PPTX · 4 MB/file</small><input type="file" id="file-input" multiple aria-label="Upload documents or data files" aria-describedby="upload-status"></label>
+          <label class="upload" id="dropzone"><span class="upload-icon" aria-hidden="true">↥</span><strong>Upload files</strong><span>Click anywhere or drag files here</span><small>PDF, images, text, CSV, DOCX, XLSX, PPTX · 4 MB/file</small><input type="file" id="file-input" multiple aria-label="Upload documents or data files" aria-describedby="upload-status"></label>
           <p id="upload-status" class="upload-status" role="status" aria-live="polite">Choose up to 5 files, 8 MB total. Unsupported formats show an explanation.</p><p class="local-note">PDF and Office text is extracted on your local server. Images use 0GM visual input. Scanned PDFs need conversion to images or text.</p>
         </div>
         <div class="connection"><p>02 / Connected through your local backend</p><p>0G credentials stay on the server. Each generation uses your compute credits; no automatic retries.</p></div>
