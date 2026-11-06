@@ -1,6 +1,6 @@
-# Manifest Finance
+# Manifest HQ
 
-Manifest Finance turns uploaded documents into custom React dashboards. Upload files, tell the assistant what to do, and receive a generated answer with suitable summaries, metrics, tables, or charts. Follow-up chat revises the answer. There is no required revenue schema or mandatory forecast.
+Manifest HQ turns uploaded documents into custom React dashboards. Upload files, tell the assistant what to do, and receive a generated answer with suitable summaries, metrics, tables, or charts. Follow-up chat revises the answer. There is no required revenue schema or mandatory forecast.
 
 ## Run locally
 

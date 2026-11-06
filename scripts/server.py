@@ -391,7 +391,7 @@ if __name__ == '__main__':
     parser.add_argument('--port', type=int, default=5173)
     args = parser.parse_args()
     server = ThreadingHTTPServer(('127.0.0.1', args.port), partial(Handler, directory=str(ROOT / 'public')))
-    print(f'Manifest Finance: http://localhost:{server.server_port}', flush=True)
+    print(f'Manifest HQ: http://localhost:{server.server_port}', flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

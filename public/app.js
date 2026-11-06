@@ -12,7 +12,7 @@ const node = (tag,className='',text) => {
 };
 function message(role,text) {
   const bubble=node('div',`chat-message ${role}`);
-  bubble.append(node('strong','',role==='user'?'You':role==='error'?'Request failed':'Manifest Finance'),node('p','',text));
+  bubble.append(node('strong','',role==='user'?'You':role==='error'?'Request failed':'Manifest HQ'),node('p','',text));
   $('chat-log').append(bubble);
   while($('chat-log').children.length>24) $('chat-log').firstElementChild.remove();
   $('chat-log').scrollTop=$('chat-log').scrollHeight;

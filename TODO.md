@@ -1,4 +1,4 @@
-# Manifest Finance — ETHGlobal Mumbai TODO
+# Manifest HQ — ETHGlobal Mumbai TODO
 
 Reviewed 6 November 2026 against the current sponsor pages. This is a prioritized implementation plan, not a claim that any sponsor integration or prize qualification is complete. Confirm registration category, submission deadline, and sponsor selections in the event dashboard. Public schedule results differed, so no deadline is assumed here.
 
@@ -101,7 +101,7 @@ Prize evidence: actual writes plus a feature reading Arkiv; wallet/query example
 
 These are proposals, not confirmed eligibility or implemented integrations. Pick at most one more substantial extension.
 
-| Sponsor / track | Proposed Manifest Finance demo | Qualification work / recommendation |
+| Sponsor / track | Proposed Manifest HQ demo | Qualification work / recommendation |
 | --- | --- | --- |
 | Chainlink CRE — $1,500 | Reconcile an uploaded cash ledger against an on-chain treasury balance, then show discrepancies in the generated report. | A real CRE workflow connects blockchain data and an API/LLM; successful CLI simulation is acceptable. Best third-track fit; confirm overlapping wording with organizers. [Requirements](https://ethglobal.com/events/mumbai/prizes/chainlink) |
 | Hedera x402 — $6,500 | A budgeted client pays a protected report-generation endpoint, receives the report and settlement receipt. | Must settle a real testnet/mainnet payment, complete a paid request without per-request human approval, and show transaction evidence. Good monetization extension, higher effort. [Requirements](https://ethglobal.com/events/mumbai/prizes/hedera) |
