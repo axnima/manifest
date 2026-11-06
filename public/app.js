@@ -20,18 +20,17 @@ function message(role,text) {
 function resetChat() {
   clearTimeout(previewTimer);history=[];generated=null;failedAttempt=null;
   $('chat-log').replaceChildren();
-  message('assistant','Upload your files, then tell me what to do: summarize, compare, extract a table, visualize data, or make a forecast. I will use the documents and your instructions.');
   $('export').disabled=true;
   $('schema').textContent='Send a message to generate React source.';
-  $('provenance').textContent='Answers and components are generated from your files and instructions.';
-  $('component-count').textContent='No generation yet';
+  $('provenance').textContent='';
+  $('component-count').textContent='';
   setTab(false);renderSource();
 }
 function renderSource() {
   const root=$('dashboard');root.replaceChildren();
-  $('preview-state').textContent=documents.length?'Files ready · ask a question':'Waiting for your files';
+  $('preview-state').textContent=documents.length?'Files ready':'Preview';
   const panel=node('div','empty-state');
-  panel.append(node('span','empty-symbol','▤'),node('h2','',documents.length?'What would you like to do?':'Start with a document.'),node('p','',documents.length?'Tell me what to extract, explain, compare, or visualize. No analysis has been sent to 0G yet.':'Upload documents, spreadsheets, images, or text, then ask a question.'));
+  panel.append(node('span','empty-symbol','▤'),node('h2','',documents.length?'Ready when you are.':'Your dashboard starts here.'),node('p','',documents.length?'Ask for a summary, chart, or forecast.':'Upload a file, then ask a question.'));
   root.append(panel);
   for(const doc of documents){
     const section=node('section','generated-card');section.append(node('h3','',doc.name),node('p','method-note',doc.description));
@@ -65,7 +64,7 @@ async function upload(files) {
       }catch(error){errors.push(`${file.name}: ${error.message}`);}
     }
     if(added){renderFiles();resetChat();}
-    uploadStatus(`${added?`Loaded ${added} file(s). Ask a question to use their contents. `:''}${errors.join(' ')}`,errors.length>0);
+    uploadStatus(`${added?`Loaded ${added} file(s). `:''}${errors.join(' ')}`,errors.length>0);
   }finally{setBusy(false);}
 }
 let previewTimer;
@@ -168,5 +167,5 @@ $('export').onclick=()=>{
   if(!generated)return;
   const url=URL.createObjectURL(new Blob([generated.source],{type:'text/plain'}));const link=node('a');link.href=url;link.download='GeneratedApp.jsx';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 };
-$('privacy-button').onclick=()=>$('privacy-dialog').showModal();$('close-dialog').onclick=()=>$('privacy-dialog').close();
+for(const id of ['privacy-button','details-button'])$(id).onclick=()=>$('privacy-dialog').showModal();$('close-dialog').onclick=()=>$('privacy-dialog').close();
 resetChat();
