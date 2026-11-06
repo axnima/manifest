@@ -32,7 +32,7 @@ Exactly these two columns; 3–36 consecutive months; unique YYYY-MM dates betwe
 
 ## How it works
 
-- `dist/model.js`: parses and validates CSV, computes a one-month linear regression forecast, calls Gemini 2.5 Flash-Lite using structured JSON, and validates the output against allowed components/bindings.
+- `dist/model.js`: parses and validates CSV, computes a one-month linear regression forecast, calls Gemini 3.5 Flash-Lite using structured JSON, and validates the output against allowed components/bindings.
 - `dist/app.js`: in-memory chat, uploads, data-driven SVG charts, metrics, tables, error states, export. The latest four successful conversation turns and current layout inform follow-ups. UI displays at most 24 chat bubbles.
 - `dist/index.html` / `dist/style.css`: responsive interface and connection instructions. CSP allows only same-origin and Google API connections; model output is rendered as text and predefined components, never executable code.
 - `dist/sample-quarterly-revenue.csv`: the only demo business dataset. It is not automatically substituted for your uploaded CSV.

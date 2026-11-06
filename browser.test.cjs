@@ -24,6 +24,7 @@ const server=http.createServer((req,res)=>{
     await page.route('https://generativelanguage.googleapis.com/**',async route=>{
       requestCount++;
       const req=route.request();
+      assert.equal(req.url(),'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent');
       assert.equal(req.headers()['x-goog-api-key'],'browser-test-key');
       requestContext=JSON.parse(req.postDataJSON().contents[0].parts[0].text);
       if(mode==='quota'){await route.fulfill({status:429,contentType:'application/json',body:'{}'});return;}

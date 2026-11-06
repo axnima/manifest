@@ -1,5 +1,5 @@
 const RevenueModel = (() => {
-  const MODEL = 'gemini-2.5-flash-lite';
+  const MODEL = 'gemini-3.5-flash-lite';
   const MAX_BYTES = 100 * 1024;
   const metricKeys = ['totalRevenue', 'lastMonthRevenue', 'nextMonthForecast', 'monthlyGrowth'];
   const bindings = {metric:metricKeys, lineChart:['revenueSeries'], barChart:['revenueSeries'], table:['revenueSeries'], note:['forecastMethod']};
@@ -93,8 +93,8 @@ const RevenueModel = (() => {
       throw new Error('Could not reach Gemini. Check your connection and browser restrictions.');
     }
     if(!response.ok){
-      const messages={400:'Gemini rejected the request. Check your API key and model access in AI Studio.',401:'Gemini rejected this API key. Create or check your key in AI Studio.',403:'Gemini access denied. Check your key restrictions, API access, and regional availability.',404:'This Gemini model is unavailable for your account. Check AI Studio model availability.',429:'Gemini quota reached. Check your free-tier limits in AI Studio and retry later; no paid fallback was attempted.'};
-      throw new Error(messages[response.status]||`Gemini is unavailable (HTTP ${response.status}). Try again later.`);
+      const messages={400:'Gemini rejected the request. Check your API key and model access in AI Studio.',401:'Gemini rejected this API key. Create or check your key in AI Studio.',403:'Gemini access denied. Check your key restrictions, API access, and regional availability.',404:'Google could not find the requested model or endpoint for this project. Refresh the app and check model access in AI Studio.',429:'Gemini quota reached. Check your free-tier limits in AI Studio and retry later; no paid fallback was attempted.'};
+      throw new Error(`Gemini ${MODEL} (HTTP ${response.status}): ${messages[response.status]||'Provider unavailable. Try again later.'}`);
     }
     let result;
     try {result=await response.json();} catch {throw new Error('Gemini returned an unreadable response. Try again.');}

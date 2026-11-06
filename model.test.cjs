@@ -28,7 +28,7 @@ const args={apiKey:'test-key-not-a-secret',rows,prompt:'Forecast next month',his
 (async()=>{
   let calls=0;
   const result=await generate(args,async(url,init)=>{
-    calls++;assert.ok(url.startsWith('https://generativelanguage.googleapis.com/'));
+    calls++;assert.equal(url,'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent');
     assert.equal(init.headers['x-goog-api-key'],'test-key-not-a-secret');
     const body=JSON.parse(init.body),context=JSON.parse(body.contents[0].parts[0].text);
     assert.equal(context.data.nextMonthForecast,543333.33);
@@ -39,6 +39,7 @@ const args={apiKey:'test-key-not-a-secret',rows,prompt:'Forecast next month',his
   assert.equal(calls,1);assert.deepEqual(result.layout,layout);assert.equal(result.meta.responseId,'provider-test-id');
   assert.ok(!JSON.stringify(result).includes('test-key-not-a-secret'));
   await assert.rejects(generate({...args,apiKey:''},()=>{throw new Error('must not call');}),/API key/);
+  await assert.rejects(generate(args,async()=>({ok:false,status:404})),/gemini-3\.5-flash-lite \(HTTP 404\)/);
   await assert.rejects(generate(args,async()=>({ok:false,status:429})),/quota/);
   await assert.rejects(generate(args,async()=>({ok:false,status:403})),/access denied/);
   await assert.rejects(generate(args,async()=>{throw new TypeError('network');}),/reach Gemini/);
