@@ -65,11 +65,11 @@ export default function App(){
     await page.locator('.privacy-facts summary').click();
     assert.ok(await page.getByText('Local technical logs and 0G billing records keep metadata.',{exact:false}).isVisible());
     await page.setViewportSize({width:1440,height:1100});
-    await page.getByRole('navigation',{name:'Main navigation'}).getByRole('link',{name:'Try Manifest',exact:true}).click();
+    await page.getByRole('link',{name:'Open studio'}).click();
     await page.waitForURL('**/studio.html');
     await page.getByRole('link',{name:'Manifest HQ home',exact:true}).click();
     await page.waitForURL('**/index.html');
-    await page.getByRole('navigation',{name:'Main navigation'}).getByRole('link',{name:'Try Manifest',exact:true}).click();
+    await page.getByRole('link',{name:'Open studio'}).click();
     await page.waitForURL('**/studio.html');
     assert.equal(await page.title(),'manifest HQ');
     assert.equal(await page.locator('#file-input').evaluate(el=>getComputedStyle(el).opacity),'0');
