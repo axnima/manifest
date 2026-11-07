@@ -116,7 +116,8 @@ class DocumentTests(unittest.TestCase):
         output={'id':'gemini-response','choices':[{'finish_reason':'stop','message':{'content':json.dumps(layout)}}], 'usage':{'prompt_tokens':100,'completion_tokens':200,'total_tokens':300}}
         data={'documents':[{'name':'private.csv','text':'PRIVATE REVENUE'}, {'name':'image.png','mimeType':'image/png','base64':base64.b64encode(b'\x89PNG\r\n\x1a\nimage').decode()}], 'prompt':'Show profit','history':[{'role':'user','text':'PRIVATE HISTORY'}],'previous':'export default()=>null'}
         config={'ZERO_G_API_KEY':'zero-secret','ZERO_G_BASE_URL':'https://router-api.0g.ai/v1','ZERO_G_MODEL':'0gm-1.0-35b-a3b','GEMINI_API_KEY':'gemini-secret','GEMINI_MODEL':'gemini-3.8-flash'}
-        def success(status=200, payload=None):
+        def success(status=200, payload=None, native=False):
+            if native:payload={'responseId':'gemini-response','candidates':[{'finishReason':'STOP','content':{'parts':[{'text':json.dumps(layout)}]}}], 'usageMetadata':{'promptTokenCount':100,'candidatesTokenCount':200,'totalTokenCount':300}}
             stream=io.BytesIO(json.dumps(output if payload is None else payload).encode());stream.status=status
             return stream
         with patch.dict(os.environ,config), patch('server.save_diagnostics') as log:
@@ -132,15 +133,17 @@ class DocumentTests(unittest.TestCase):
                             if code==201:return success(201)
                             raise urllib.error.HTTPError('url',code,'PRIVATE ERROR BODY',{},io.BytesIO(b'private provider error'))
                         self.assertEqual(timeout,60)
-                        self.assertEqual(request.full_url,'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions')
-                        self.assertEqual(request.get_header('Authorization'),'Bearer gemini-secret')
+                        self.assertEqual(request.full_url,'https://generativelanguage.googleapis.com/v1/models/gemini-3.8-flash:generateContent')
+                        self.assertIsNone(request.get_header('Authorization'))
+                        self.assertEqual(request.get_header('X-goog-api-key'),'gemini-secret')
                         self.assertIsNone(request.get_header('X-0g-provider-trust-mode'))
                         original=json.loads(requests[0].data);fallback=json.loads(request.data)
-                        self.assertEqual(fallback['messages'],original['messages'])
-                        self.assertEqual(fallback['response_format'],{'type':'json_object'})
-                        self.assertEqual(fallback['model'],'gemini-3.8-flash')
-                        self.assertEqual(fallback['max_tokens'],16384)
-                        return success()
+                        self.assertEqual(fallback['systemInstruction']['parts'][0]['text'],original['messages'][0]['content'])
+                        self.assertEqual(fallback['contents'][0]['parts'][0]['text'],original['messages'][1]['content'][0]['text'])
+                        self.assertEqual(fallback['contents'][0]['parts'][1]['inlineData']['mimeType'],'image/png')
+                        self.assertEqual(fallback['generationConfig']['responseMimeType'],'application/json')
+                        self.assertEqual(fallback['generationConfig']['maxOutputTokens'],16384)
+                        return success(native=True)
                     with patch('server.urllib.request.urlopen',side_effect=respond) as call:
                         status,result=generate_component(data)
                     self.assertEqual(status,200);self.assertEqual(call.call_count,2)

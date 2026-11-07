@@ -79,7 +79,7 @@ GEMINI_API_KEY=your_google_ai_studio_key
 GEMINI_MODEL=gemini-3.8-flash
 ```
 
-A non-empty `GEMINI_API_KEY` enables fallback; remove it or leave it blank for 0G-only operation. The default model is `gemini-3.8-flash`; choose a model available to your account. The Google endpoint is fixed server-side to its [OpenAI-compatible API](https://ai.google.dev/gemini-api/docs/openai). No Google SDK or browser API key is needed.
+A non-empty `GEMINI_API_KEY` enables fallback; remove it or leave it blank for 0G-only operation. The default model is `gemini-3.8-flash`; choose a model available to your account. The Google endpoint is fixed server-side to `https://generativelanguage.googleapis.com/v1/models/{model}:generateContent`, using the native Gemini request format. No Google SDK or browser API key is needed.
 
 The backend tries 0G first. Only a non-200 provider HTTP response triggers one Gemini call. Input/configuration errors, network failures/timeouts without an HTTP response, malformed or truncated HTTP-200 output, and compilation/runtime failures do not trigger fallback. Gemini uses the same document/image context, conversation, and React instructions; responses pass through the same validation, compiler, and sandbox. If both providers fail, diagnostics retain the 0G HTTP status and identify the Gemini failure. No fake response is substituted.
 

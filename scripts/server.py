@@ -175,7 +175,11 @@ class InferenceError(Exception):
 
 
 def request_completion(url, body, key, provider, timeout):
-    headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key}
+    headers = {'Content-Type': 'application/json'}
+    if provider == 'Gemini':
+        headers['x-goog-api-key'] = key
+    else:
+        headers['Authorization'] = 'Bearer ' + key
     if provider == '0G':
         headers['X-0G-Provider-Trust-Mode'] = 'private'
     request = urllib.request.Request(url, data=json.dumps(body).encode(), headers=headers)
@@ -279,9 +283,35 @@ def generate_component(data):
                 provider = 'Gemini'
                 diagnostic.pop('httpStatus', None)
                 diagnostic.update(provider=provider, model=model, trustMode='standard', fallbackFrom='0G', maxOutputTokens=16384)
-                body = {**body, 'model': model, 'max_tokens': 16384}
-                status, raw = request_completion('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', body, fallback_key, provider, 60)
+                content = body['messages'][1]['content']
+                parts = [{'text': content}] if isinstance(content, str) else []
+                if isinstance(content, list):
+                    for item in content:
+                        if item['type'] == 'text':
+                            parts.append({'text': item['text']})
+                        else:
+                            mime, encoded = item['image_url']['url'][5:].split(';base64,', 1)
+                            parts.append({'inlineData': {'mimeType': mime, 'data': encoded}})
+                gemini_body = {
+                    'systemInstruction': {'parts': [{'text': body['messages'][0]['content']}]},
+                    'contents': [{'role': 'user', 'parts': parts}],
+                    'generationConfig': {'responseMimeType': 'application/json', 'maxOutputTokens': 16384, 'temperature': 0.3}}
+                status, raw = request_completion(f'https://generativelanguage.googleapis.com/v1/models/{model}:generateContent', gemini_body, fallback_key, provider, 60)
                 diagnostic['httpStatus'] = status
+                if status == 200 and len(raw) <= 2*1024*1024:
+                    try:
+                        native = json.loads(raw)
+                        candidates = native.get('candidates', [])
+                        candidate = candidates[0] if candidates else {}
+                        usage = native.get('usageMetadata', {})
+                        result = {'id': native.get('responseId'), 'choices': [{
+                            'finish_reason': {'STOP': 'stop', 'MAX_TOKENS': 'length'}.get(candidate.get('finishReason'), 'blocked'),
+                            'message': {'content': ''.join(part.get('text', '') for part in candidate.get('content', {}).get('parts', []) if not part.get('thought'))}}],
+                            'usage': {'prompt_tokens': usage.get('promptTokenCount'), 'completion_tokens': usage.get('candidatesTokenCount'), 'total_tokens': usage.get('totalTokenCount'),
+                                'completion_tokens_details': {'reasoning_tokens': usage.get('thoughtsTokenCount')}}}
+                        raw = json.dumps(result).encode()
+                    except (ValueError, TypeError, AttributeError, KeyError):
+                        raise InferenceError('Gemini returned an invalid API response.') from None
             if status != 200:
                 if provider == 'Gemini':
                     raise InferenceError(f'0G HTTP {diagnostic["primaryHttpStatus"]}; Gemini fallback HTTP {status}. Check Gemini model access, API key, quota, and billing. No further retry was made.')
