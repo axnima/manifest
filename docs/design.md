@@ -24,9 +24,9 @@ The root `public/index.html` introduces Manifest HQ with a bright blue atmospher
 
 The actual MIT-licensed OceanEngine from [stackedlol/ascii-sharks](https://github.com/stackedlol/ascii-sharks) renders two sharks and a fish school as a fixed landing-page backdrop. Upstream source and license are vendored unchanged, with its exact commit recorded in `vendor/ascii-sharks/UPSTREAM.md`. `scripts/landing-ocean.ts` adds a visible pause control and suspends the engine when the tab is hidden. Upstream handles off-screen pausing and static reduced-motion rendering. Resuming after a manual pause starts a fresh scene.
 
-The original dark rendering receives a light CSS color treatment and a directional veil behind the copy; the original rendering and physics are retained. The canvas is decorative and hidden from assistive technology; its caption and controls remain accessible. The existing esbuild dependency creates the checked-in `public/ascii-ocean.js`, including the MIT license. No runtime dependencies or external script hosts were added.
+The original dark rendering receives a light CSS color treatment and an even translucent overlay across the viewport; the original rendering and physics are retained. The canvas is decorative and hidden from assistive technology; its caption and controls remain accessible. The existing esbuild dependency creates the checked-in `public/ascii-ocean.js`, including the MIT license. No runtime dependencies or external script hosts were added.
 
-The ASCII canvas now sits behind the full landing page rather than in an illustration card. It ignores pointer hit-testing, keeping links usable; its pause control and attribution remain in a small fixed control group. Translucent surfaces and a directional veil preserve text contrast. The studio uses cobalt, pale blue, and navy consistently, including its wordmark accents.
+The ASCII canvas now sits behind the full landing page rather than in an illustration card. It ignores pointer hit-testing, keeping links usable; its pause control and attribution remain in a small fixed control group. Translucent reading surfaces preserve text contrast; the backdrop has no left-side white gradient. Header and footer content have responsive internal padding. The studio uses cobalt, pale blue, and navy consistently, including its wordmark accents.
 
 ## Product copy
 
