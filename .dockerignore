@@ -1,0 +1,9 @@
+**
+!package.json
+!package-lock.json
+!public/
+!public/**
+!scripts/
+!scripts/server.py
+!scripts/compile.cjs
+!scripts/instructions.txt

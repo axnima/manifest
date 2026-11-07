@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Upload files and ask 0G to analyze, summarize, compare, or visualize their contents.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer"><title>manifest HQ</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=4">
+  <meta name="theme-color" content="#2457e5">
+  <link rel="preload" href="fonts/manrope-variable.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="fonts/instrument-serif.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="stylesheet" href="style.css?v=blue-2"><script src="model.js?v=0g-1" defer></script><script src="app.js?v=0g-1" defer></script>
+</head>
+<body>
+<aside class="sidebar">
+  <a class="brand" href="index.html" aria-label="Manifest HQ home"><img class="brand-mark" src="favicon.svg" alt="" width="34" height="34"><span class="brand-name">manifest<small>HQ</small></span></a>
+  <nav aria-label="Workspace">
+    <a class="nav-item active" href="#studio"><span aria-hidden="true">◈</span> Studio</a>
+    <a class="nav-item" href="#sources"><span aria-hidden="true">▤</span> Files <span class="nav-count" id="source-count">0</span></a>
+    <button class="nav-item" id="privacy-button"><span aria-hidden="true">◇</span> How this works</button>
+  </nav>
+  <div class="sidebar-signoff"><span class="signoff-symbol" aria-hidden="true">✳</span><p>A workspace for<br>better questions.</p><small>Powered by 0G Private Computer</small></div>
+</aside>
+<main id="studio">
+  <header class="topbar"><button class="quiet-button" id="details-button" type="button">Details</button><span class="demo-pill"><i></i> 0G · Private inference</span></header>
+  <div class="page">
+    <section class="page-heading" aria-label="Welcome to Manifest HQ">
+      <div class="hero-copy">
+        <p class="eyebrow">YOUR DOCUMENTS. A CLEARER PICTURE.</p>
+        <h1 class="manifest-title"><span class="manifest-word">manifest</span> <span class="hq-tag">HQ</span></h1>
+        <p class="subtitle">Make sense of the numbers.<br><span>Then make your next move.</span></p>
+        <p class="hero-description">Bring your reports, ask a question, and shape the answer into a dashboard. Every follow-up gives you a new perspective.</p>
+      </div>
+      <aside class="privacy-card" aria-labelledby="privacy-heading">
+        <div class="privacy-kicker"><span class="privacy-symbol" aria-hidden="true"><img src="favicon.svg" alt="" width="34" height="34"><span class="orbit-dot"></span></span><span>POWERED BY 0G PRIVATE COMPUTER</span></div>
+        <h2 id="privacy-heading">Your context.<br> Your private space.</h2>
+        <p>Private inference runs inside hardware-isolated enclaves. According to 0G, its Router keeps usage metadata, never your prompts or responses.</p>
+        <details class="privacy-notes"><summary>What gets stored?</summary><p>Manifest HQ keeps files and chat in this tab, without a saved document library. PDF extraction uses temporary files that are removed afterward. Local technical logs and 0G billing records retain metadata, not document contents.</p><p>Your local backend handles plaintext. We request Private routing; independent attestation verification is not implemented.</p><a href="https://0g.ai/blog/data-privacy-on-0g-private-computer" target="_blank" rel="noopener noreferrer">Read 0G’s privacy explanation ↗</a></details>
+      </aside>
+    </section>
+    <div class="studio-layout">
+      <section class="builder" aria-label="Data and chat">
+        <div class="section-label"><span class="step">01</span><h2>Bring your files</h2></div><p class="section-description">A monthly report, a spreadsheet, or the details behind a decision.</p>
+        <div id="sources" class="sources">
+          <div class="sample-actions"><a href="sample-quarterly-revenue.csv" download>↓ Sample CSV</a><button id="load-sample" type="button">Use sample</button></div>
+          <div id="file-list"></div>
+          <label class="upload" id="dropzone"><span class="upload-icon" aria-hidden="true">↥</span><strong>Upload files</strong><span>Click or drop files</span><small>PDF, images, spreadsheets, text</small><input type="file" id="file-input" multiple aria-label="Upload documents or data files" aria-describedby="upload-status"></label>
+          <p id="upload-status" class="upload-status" role="status" aria-live="polite">5 files max · 4 MB each · 8 MB total</p>
+        </div>
+        <div class="section-label prompt-heading"><span class="step">02</span><h2>Ask a question</h2><button id="reset-chat" class="quiet-button" type="button">New chat</button></div>
+        <p class="section-description">Compare expenses, explore a forecast, or find what needs your attention.</p>
+        <div id="chat-log" class="chat-log" role="log" aria-label="Conversation" aria-live="polite"></div>
+        <form id="prompt-form">
+          <label class="sr-only" for="prompt">Tell the assistant what to do with your files</label>
+          <textarea id="prompt" maxlength="2000" required placeholder="Ask about your files…"></textarea>
+          <div class="suggestions"><button type="button" data-prompt="Summarize the attached documents and highlight the main points.">↗ Summarize</button><button type="button" data-prompt="Extract the important facts into a table and identify their sources.">↗ Extract a table</button><button type="button" data-prompt="Visualize relevant numbers from these files. Explain what the chart shows.">↗ Visualize</button></div>
+          <button class="generate" type="submit" id="generate"><span aria-hidden="true">✧</span> Generate <span aria-hidden="true">↗</span></button>
+        </form>
+        <p class="status" id="status" role="status" aria-live="polite"></p><p class="credit-note">Uses 0G credits.</p>
+      </section>
+      <section class="preview-panel" aria-label="Generated dashboard">
+        <div class="preview-toolbar"><div class="tabs" role="tablist" aria-label="Output view"><button id="preview-tab" role="tab" aria-selected="true" aria-controls="dashboard" class="selected">◫ Preview</button><button id="schema-tab" role="tab" aria-selected="false" aria-controls="schema" tabindex="-1">{ } React source</button></div><button id="export" class="export" disabled>↓ Export JSX</button></div>
+        <div class="preview-context"><span id="preview-state">Waiting for your data</span><span id="component-count">No generation yet</span></div>
+        <div id="dashboard" role="tabpanel" aria-labelledby="preview-tab"></div>
+        <pre id="schema" role="tabpanel" aria-labelledby="schema-tab" hidden tabindex="0">Send a message to generate React source.</pre>
+        <footer class="preview-footer"><span aria-hidden="true">◇</span><span id="provenance"></span></footer>
+      </section>
+    </div>
+    <footer class="page-footer"><span>Built for questions that deserve a clearer answer.</span><span>Prototype · Use fictional data.</span></footer>
+  </div>
+</main>
+<dialog id="privacy-dialog">
+  <button id="close-dialog" class="close" aria-label="Close details">×</button><p class="eyebrow">A REAL REQUEST. A VISIBLE RESULT.</p><h2>From documents to answers.</h2>
+  <ol><li>Upload text PDFs, text, CSV, JSON, DOCX, XLSX, PPTX, or ODT files. Images use model vision; scanned PDFs need conversion to images or text.</li><li>Configure the local backend using the root .env file.</li><li>Your document text, question, recent conversation, and previous component are sent through the backend to 0G using Private routing.</li><li>0G writes React. The backend compiles it and the browser renders an isolated preview. Follow-ups revise the dashboard.</li></ol>
+  <p>Source references and calculations need checking. Original files and generated source are not persisted by the app; sanitized request metadata is logged locally. The local backend handles plaintext documents and source. Private routing is requested from 0G; it is not a claim that the entire app is end-to-end encrypted.</p>
+  <p>Provider errors are shown explicitly. The app never substitutes a fake AI response or silently changes providers.</p>
+  <details class="connection"><summary>Request diagnostics</summary><p id="diagnostics-status">No request yet. Keys and document content are excluded.</p><pre id="diagnostics-output" class="source-preview"></pre></details>
+</dialog>
+</body></html>

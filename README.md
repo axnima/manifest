@@ -13,7 +13,7 @@ cp .env.example .env
 npm start
 ```
 
-Open **http://localhost:5173**. Stop with Ctrl+C. After upgrading from the old static server, stop it and run `npm start` again: Office extraction and React compilation need the new local server. Hard-refresh any existing browser tab.
+Open **http://localhost:5173** for the landing page, then choose **Try Manifest** to enter the workspace at **http://localhost:5173/studio.html**. Stop with Ctrl+C. After upgrading from the old static server, stop it and run `npm start` again: Office extraction and React compilation need the new local server. Hard-refresh any existing browser tab.
 
 Alternatively:
 
@@ -22,6 +22,34 @@ python3 scripts/server.py --port 5173
 ```
 
 Use a different port if needed. Edit `public/` and refresh to see changes.
+
+## Deploy a demo with Docker
+
+The backend requires Python, Node.js, and Poppler. Deploy the repository as a Docker web service (for example on Render or Railway), not as a static site. The root `Dockerfile` installs these dependencies, runs as a non-root user, and copies only runtime files. `.env`, Git history, logs, and local artifacts are excluded from the build context.
+
+1. Commit and push the changes you want deployed. Commit messages remain yours to write.
+2. Connect the GitHub repository to your host and select its Docker runtime, using the root `Dockerfile`.
+3. Set these **runtime environment variables** in the host dashboard:
+
+   ```dotenv
+   ZERO_G_API_KEY=your_mainnet_api_key
+   ZERO_G_BASE_URL=https://router-api.0g.ai/v1
+   ZERO_G_MODEL=0gm-1.0-35b-a3b
+   PUBLIC_ORIGIN=https://your-assigned-hostname
+   ```
+
+   `PUBLIC_ORIGIN` must match the browser's deployment URL exactly, including HTTPS, without a path. Update it if the hostname changes. Never commit your actual key or paste it into frontend files. The container binds to `0.0.0.0` and honors the host's `PORT` variable (default `10000`).
+4. Set the HTTP health-check path to `/healthz`. It checks server availability, not 0G credentials, and does not spend inference credits.
+5. Deploy, open `/`, enter `/studio.html`, upload a fictional document, and try a small request. This last step uses real 0G credits.
+
+For a local container check, without copying your secrets into the image:
+
+```sh
+docker build -t manifest-hq .
+docker run --rm -p 5173:10000 --env-file .env -e PUBLIC_ORIGIN=http://localhost:5173 manifest-hq
+```
+
+This is a demo deployment, not a hardened public service. There is no user authentication or per-user spending limit: anyone who can reach the inference endpoint can consume your configured credits. Host/origin checks prevent unintended browser origins; they are not authentication. Use host-level access protection for a restricted demo. Diagnostics are local to the container and can disappear on redeployment; uploaded document content is not written to those logs.
 
 ## Use
 
@@ -84,7 +112,7 @@ Tests use controlled provider responses; a live 0G run uses your configured key 
 
 0G returns real React JSX in a JSON envelope (`title`, `reply`, `source`). The local backend uses esbuild to compile and bundle React; it does not execute the generated module. The browser runs the bundle in an iframe with only `allow-scripts`, an opaque origin, and a restrictive CSP. The generated preview has no access to the parent DOM/API key and ordinary network requests are blocked. Only React imports are allowed; write charts with SVG and styles with inline CSS. Arbitrary packages and external assets are not available. Export downloads `GeneratedApp.jsx`. Compilation errors retain the previous working preview; runtime errors appear in chat. Failed source/error context is sent on follow-ups so 0G can repair it. Source references, extracted numbers, and model calculations are not independently verified. Forecasts must label assumptions and estimated points. A local linear-trend helper is supplied only when a forecast is requested on the original `month,revenue_usd` sample schema; all other calculations are model-generated. This is a prototype, not an audited financial system.
 
-Generated code is still untrusted: sandboxing does not prevent every browser resource-exhaustion issue, such as an infinite loop. Keep this as a local prototype; shared production execution needs stronger isolation and resource controls.
+Generated code is still untrusted: sandboxing does not prevent every browser resource-exhaustion issue, such as an infinite loop. Shared production execution needs stronger isolation and resource controls; use the deployment setup above for a limited demo.
 
 ## 0G diagnostics
 
@@ -95,3 +123,13 @@ tail -n 10 .local-artifacts/inference.jsonl
 ```
 
 The app's **Request diagnostics** panel shows the latest entry and whether it was saved. Entries include a local request ID, UTC timestamp, model, duration, HTTP status, provider response ID, finish/block reason, processing stage, output length, and token counts when available. Prompts, file names/content, API keys, and generated response text are excluded. If saving fails, the app still displays the diagnostics and original provider result/error. Requests made before this feature was installed cannot be recovered.
+
+## Landing-page ASCII art
+
+The landing page uses [ASCII Sharks](https://github.com/stackedlol/ascii-sharks), vendored under `vendor/ascii-sharks/` at the commit recorded in `UPSTREAM.md`. Its MIT license is retained in the source and browser bundle. The scene is decorative, supports pause and reduced motion, and makes no inference calls.
+
+After editing `scripts/landing-ocean.ts` or vendored source, rebuild the checked-in browser bundle using the existing esbuild dependency:
+
+```sh
+npm run build:ascii
+```

@@ -34,6 +34,43 @@ export default function App(){
       await route.fulfill({json:{title:'Profit view',reply:'Here is the custom React view.',source,meta:{requestId:'local-id',model:'0gm-1.0-35b-a3b',responseId:'test-response',trustMode:'private',usage:{total_tokens:2000},estimatedCostUsd:0.001}}});
     });
     await page.goto(origin);
+    await page.getByRole('heading',{name:'Your numbers. A clearer picture.'}).waitFor();
+    assert.equal(calls,0);
+    await page.locator('.ocean-credit').click({trial:true});
+    const ocean=page.locator('#ascii-ocean');
+    assert.equal(await page.locator('.ocean-backdrop').evaluate(el=>getComputedStyle(el).position),'fixed');
+    assert.equal(await page.locator('.ocean-backdrop').evaluate(el=>getComputedStyle(el).pointerEvents),'none');
+    await page.waitForFunction(()=>document.getElementById('ascii-ocean').dataset.ready==='true');
+    assert.ok(await ocean.evaluate(canvas=>{
+      const data=canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data;
+      let varied=0;for(let i=0;i<data.length;i+=4)if(data[i]!==data[0]||data[i+1]!==data[1])varied++;
+      return varied>100;
+    }));
+    await page.getByRole('button',{name:'Pause motion',exact:true}).click();
+    const pausedOcean=await ocean.evaluate(canvas=>canvas.toDataURL());
+    await page.waitForTimeout(150);
+    assert.equal(await ocean.evaluate(canvas=>canvas.toDataURL()),pausedOcean);
+    assert.equal(await ocean.getAttribute('data-motion'),'paused');
+    await page.getByRole('button',{name:'Resume motion',exact:true}).click();
+    assert.equal(await ocean.getAttribute('data-motion'),'running');
+
+    for(const width of [768,390,320]){
+      await page.setViewportSize({width,height:844});
+      assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+    }
+    await page.emulateMedia({reducedMotion:'reduce'});
+    await page.waitForFunction(()=>document.getElementById('ascii-ocean').dataset.motion==='still');
+    assert.equal(await ocean.getAttribute('data-motion'),'still');
+    assert.equal(await page.getByRole('button',{name:'Still scene',exact:true}).isDisabled(),true);
+    await page.locator('.privacy-facts summary').click();
+    assert.ok(await page.getByText('Local technical logs and 0G billing records keep metadata.',{exact:false}).isVisible());
+    await page.setViewportSize({width:1440,height:1100});
+    await page.getByRole('navigation',{name:'Main navigation'}).getByRole('link',{name:'Try Manifest',exact:true}).click();
+    await page.waitForURL('**/studio.html');
+    await page.getByRole('link',{name:'Manifest HQ home',exact:true}).click();
+    await page.waitForURL('**/index.html');
+    await page.getByRole('navigation',{name:'Main navigation'}).getByRole('link',{name:'Try Manifest',exact:true}).click();
+    await page.waitForURL('**/studio.html');
     assert.equal(await page.title(),'manifest HQ');
     assert.equal(await page.locator('#file-input').evaluate(el=>getComputedStyle(el).opacity),'0');
     await page.locator('#file-input').focus();
@@ -68,6 +105,6 @@ export default function App(){
     assert.ok((await page.locator('#chat-log').innerText()).includes('Test render failure'));
     await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
     assert.deepEqual(errors,[]);
-    console.log('Browser checks passed: real backend compilation, pink JSX/SVG, React hooks, parent-key isolation, network blocking, source/export, follow-ups, compile/runtime/truncation errors, mobile. 0G backend responses intercepted; no live inference.');
+    console.log('Browser checks passed: ASCII render/pause/reduced motion, landing navigation, real backend compilation, pink JSX/SVG, React hooks, parent-key isolation, network blocking, source/export, follow-ups, compile/runtime/truncation errors, mobile. 0G backend responses intercepted; no live inference.');
   }finally{if(browser)await browser.close();server.kill('SIGTERM');}
 })().catch(e=>{console.error(e);process.exitCode=1;});

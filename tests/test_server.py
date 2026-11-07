@@ -116,6 +116,18 @@ class DocumentTests(unittest.TestCase):
         try:
             base=f'http://127.0.0.1:{server.server_port}'
             with urllib.request.urlopen(base) as r:self.assertEqual(r.status,200)
+            with urllib.request.urlopen(base+'/healthz') as r:self.assertEqual(json.load(r), {'status':'ok'})
+            with patch.dict(os.environ, {'PUBLIC_ORIGIN':'https://manifest.example'}), patch('server.generate_component', return_value=(200, {'title':'Hosted'})) as generation:
+                hosted=urllib.request.Request(base+'/api/generate',data=b'{}',headers={'Host':'manifest.example','Origin':'https://manifest.example'})
+                with urllib.request.urlopen(hosted) as r:self.assertEqual(json.load(r)['title'],'Hosted')
+                hosted.add_header('Origin','https://attacker.example')
+                with self.assertRaises(urllib.error.HTTPError) as error:urllib.request.urlopen(hosted)
+                self.assertEqual(error.exception.code,403);error.exception.close()
+                hosted.add_header('Origin','https://manifest.example')
+                hosted.add_header('Host','attacker.example')
+                with self.assertRaises(urllib.error.HTTPError) as error:urllib.request.urlopen(hosted)
+                self.assertEqual(error.exception.code,403);error.exception.close()
+                self.assertEqual(generation.call_count,1)
             data=archive({'word/document.xml':'<w:document xmlns:w="w"><w:p><w:t>Hello</w:t></w:p></w:document>'})
             req=urllib.request.Request(base+'/api/extract?format=docx',data=data,headers={'Content-Type':'application/octet-stream'})
             with urllib.request.urlopen(req) as r:self.assertEqual(json.load(r)['text'],'Hello')

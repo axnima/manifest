@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
   <title>Manifest HQ</title>
-  <rect width="64" height="64" rx="18" fill="#292330"/>
-  <g fill="#efb9ad">
+  <rect width="64" height="64" rx="18" fill="#2457e5"/>
+  <g fill="#b4fff0">
     <path id="orbit" d="M32 9a23 23 0 0 1 17.62 8.22l-6.13 5.14A15 15 0 0 0 32 17Z"/>
     <use href="#orbit" transform="rotate(60 32 32)"/>
     <use href="#orbit" transform="rotate(120 32 32)"/>

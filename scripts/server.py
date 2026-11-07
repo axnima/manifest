@@ -1,4 +1,4 @@
-"""Local static server with bounded, in-memory Office text extraction."""
+"""Web server with bounded document extraction and React compilation."""
 import io
 import base64
 import threading
@@ -334,16 +334,30 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header('X-Content-Type-Options', 'nosniff')
         super().end_headers()
 
+    def do_GET(self):
+        if urlsplit(self.path).path == '/healthz':
+            raw = b'{"status":"ok"}'
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', str(len(raw)))
+            self.end_headers()
+            self.wfile.write(raw)
+            return
+        super().do_GET()
+
     def do_POST(self):
         route = urlsplit(self.path).path
         if route not in {'/api/extract', '/api/diagnostics', '/api/compile', '/api/generate'}:
             self.send_error(404)
             return
-        if self.headers.get('Host') not in {f'127.0.0.1:{self.server.server_port}', f'localhost:{self.server.server_port}'}:
+        origins = {f'http://127.0.0.1:{self.server.server_port}', f'http://localhost:{self.server.server_port}'}
+        if os.environ.get('PUBLIC_ORIGIN'):
+            origins.add(os.environ['PUBLIC_ORIGIN'].rstrip('/'))
+        if self.headers.get('Host') not in {urlsplit(value).netloc for value in origins}:
             self.send_error(403)
             return
         origin = self.headers.get('Origin')
-        if origin and origin not in {f'http://127.0.0.1:{self.server.server_port}', f'http://localhost:{self.server.server_port}'}:
+        if origin and origin not in origins:
             self.send_error(403)
             return
         try:
@@ -388,10 +402,16 @@ if __name__ == '__main__':
     load_env()
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--port', type=int, default=5173)
+    parser.add_argument('--port', type=int, default=int(os.environ.get('PORT', '5173')))
+    parser.add_argument('--host', default=os.environ.get('BIND_HOST', '127.0.0.1'))
     args = parser.parse_args()
-    server = ThreadingHTTPServer(('127.0.0.1', args.port), partial(Handler, directory=str(ROOT / 'public')))
-    print(f'Manifest HQ: http://localhost:{server.server_port}', flush=True)
+    public_origin = os.environ.get('PUBLIC_ORIGIN', '').rstrip('/')
+    if public_origin:
+        parsed = urlsplit(public_origin)
+        if parsed.scheme not in {'http', 'https'} or not parsed.hostname or parsed.path or parsed.query or parsed.fragment or parsed.username or parsed.password:
+            parser.error('PUBLIC_ORIGIN must be an http(s) origin without a path, query, or credentials.')
+    server = ThreadingHTTPServer((args.host, args.port), partial(Handler, directory=str(ROOT / 'public')))
+    print(f'Manifest HQ: {public_origin or f"http://localhost:{server.server_port}"}', flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

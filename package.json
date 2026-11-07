@@ -6,7 +6,8 @@
   "scripts": {
     "start": "python3 scripts/server.py",
     "dev": "npm start",
-    "test": "node tests/model.test.cjs && node tests/compiler.test.cjs && python3 -m unittest discover -s tests -p \"test_*.py\" && node --check public/app.js"
+    "test": "node tests/model.test.cjs && node tests/compiler.test.cjs && python3 -m unittest discover -s tests -p \"test_*.py\" && node --check public/app.js && node --check public/ascii-ocean.js",
+    "build:ascii": "node scripts/build-ascii.cjs"
   },
   "engines": {
     "node": ">=20"

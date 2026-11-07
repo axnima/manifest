@@ -2,78 +2,48 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Upload files and ask 0G to analyze, summarize, compare, or visualize their contents.">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
-  <meta name="referrer" content="no-referrer"><title>manifest HQ</title>
-  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=3">
-  <meta name="theme-color" content="#292330">
+  <title>manifest HQ</title>
+  <meta name="description" content="A private workspace for turning financial documents into clear answers and custom dashboards. Powered by 0G Private Computer.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer"><meta name="theme-color" content="#2457e5">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=4">
   <link rel="preload" href="fonts/manrope-variable.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="preload" href="fonts/instrument-serif.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="stylesheet" href="style.css"><script src="model.js?v=0g-1" defer></script><script src="app.js?v=0g-1" defer></script>
+  <link rel="stylesheet" href="landing.css?v=backdrop-1"><script src="ascii-ocean.js" defer></script>
 </head>
 <body>
-<aside class="sidebar">
-  <a class="brand" href="./"><img class="brand-mark" src="favicon.svg" alt="" width="34" height="34"><span class="brand-name">manifest<small>HQ</small></span></a>
-  <nav aria-label="Workspace">
-    <a class="nav-item active" href="#studio"><span aria-hidden="true">◈</span> Studio</a>
-    <a class="nav-item" href="#sources"><span aria-hidden="true">▤</span> Files <span class="nav-count" id="source-count">0</span></a>
-    <button class="nav-item" id="privacy-button"><span aria-hidden="true">◇</span> How this works</button>
-  </nav>
-  <div class="sidebar-signoff"><span class="signoff-symbol" aria-hidden="true">✳</span><p>A workspace for<br>better questions.</p><small>Powered by 0G Private Computer</small></div>
-</aside>
-<main id="studio">
-  <header class="topbar"><button class="quiet-button" id="details-button" type="button">Details</button><span class="demo-pill"><i></i> 0G · Private inference</span></header>
-  <div class="page">
-    <section class="page-heading" aria-label="Welcome to Manifest HQ">
-      <div class="hero-copy">
-        <p class="eyebrow">YOUR DOCUMENTS. A CLEARER PICTURE.</p>
-        <h1 class="manifest-title"><span class="manifest-word">manifest</span> <span class="hq-tag">HQ</span></h1>
-        <p class="subtitle">Make sense of the numbers.<br><span>Then make your next move.</span></p>
-        <p class="hero-description">Bring your reports, ask a question, and shape the answer into a dashboard. Every follow-up gives you a new perspective.</p>
-      </div>
-      <aside class="privacy-card" aria-labelledby="privacy-heading">
-        <div class="privacy-kicker"><span class="privacy-symbol" aria-hidden="true"><img src="favicon.svg" alt="" width="34" height="34"><span class="orbit-dot"></span></span><span>POWERED BY 0G PRIVATE COMPUTER</span></div>
-        <h2 id="privacy-heading">Your context.<br> Your private space.</h2>
-        <p>Private inference runs inside hardware-isolated enclaves. According to 0G, its Router keeps usage metadata, never your prompts or responses.</p>
-        <details class="privacy-notes"><summary>What gets stored?</summary><p>Manifest HQ keeps files and chat in this tab, without a saved document library. PDF extraction uses temporary files that are removed afterward. Local technical logs and 0G billing records retain metadata, not document contents.</p><p>Your local backend handles plaintext. We request Private routing; independent attestation verification is not implemented.</p><a href="https://0g.ai/blog/data-privacy-on-0g-private-computer" target="_blank" rel="noopener noreferrer">Read 0G’s privacy explanation ↗</a></details>
-      </aside>
-    </section>
-    <div class="studio-layout">
-      <section class="builder" aria-label="Data and chat">
-        <div class="section-label"><span class="step">01</span><h2>Bring your files</h2></div><p class="section-description">A monthly report, a spreadsheet, or the details behind a decision.</p>
-        <div id="sources" class="sources">
-          <div class="sample-actions"><a href="sample-quarterly-revenue.csv" download>↓ Sample CSV</a><button id="load-sample" type="button">Use sample</button></div>
-          <div id="file-list"></div>
-          <label class="upload" id="dropzone"><span class="upload-icon" aria-hidden="true">↥</span><strong>Upload files</strong><span>Click or drop files</span><small>PDF, images, spreadsheets, text</small><input type="file" id="file-input" multiple aria-label="Upload documents or data files" aria-describedby="upload-status"></label>
-          <p id="upload-status" class="upload-status" role="status" aria-live="polite">5 files max · 4 MB each · 8 MB total</p>
+  <div class="ocean-backdrop" aria-hidden="true"><canvas id="ascii-ocean"></canvas></div>
+  <div class="ocean-controls"><a class="ocean-credit" href="https://github.com/stackedlol/ascii-sharks" target="_blank" rel="noopener noreferrer">ASCII Sharks ↗</a><button id="ocean-toggle" type="button" aria-pressed="false" aria-controls="ascii-ocean" hidden>Pause motion</button></div>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="opening">
+    <header class="site-header">
+      <a class="wordmark" href="index.html" aria-label="Manifest HQ home"><img src="favicon.svg" alt="" width="36" height="36"><span>manifest</span><small>HQ</small></a>
+      <nav aria-label="Main navigation"><a class="section-link" href="#how-it-works">How it works</a><a class="section-link" href="#privacy">Privacy</a><a class="button button-small" href="studio.html" aria-label="Try Manifest">Try Manifest <span aria-hidden="true">↗</span></a></nav>
+    </header>
+    <main id="main">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow"><span></span> A LITTLE MORE CLARITY. A LOT MORE POSSIBILITY.</p>
+          <h1 id="hero-title">Your numbers.<br><span>A clearer picture.</span></h1>
+          <p class="hero-intro">There’s a story in your documents.<br>Let’s find the part that matters.</p>
+          <p class="hero-description">Turn reports, spreadsheets, and questions into a dashboard you can actually use. Built around your context. Powered by private AI.</p>
+          <div class="hero-actions"><a class="button" href="studio.html">Open the studio <span aria-hidden="true">↗</span></a><a class="text-link" href="#how-it-works">Take a closer look <span aria-hidden="true">↓</span></a></div>
+          <p class="hero-footnote">Powered by 0G Private Computer <span aria-hidden="true">·</span> Private inference</p>
         </div>
-        <div class="section-label prompt-heading"><span class="step">02</span><h2>Ask a question</h2><button id="reset-chat" class="quiet-button" type="button">New chat</button></div>
-        <p class="section-description">Compare expenses, explore a forecast, or find what needs your attention.</p>
-        <div id="chat-log" class="chat-log" role="log" aria-label="Conversation" aria-live="polite"></div>
-        <form id="prompt-form">
-          <label class="sr-only" for="prompt">Tell the assistant what to do with your files</label>
-          <textarea id="prompt" maxlength="2000" required placeholder="Ask about your files…"></textarea>
-          <div class="suggestions"><button type="button" data-prompt="Summarize the attached documents and highlight the main points.">↗ Summarize</button><button type="button" data-prompt="Extract the important facts into a table and identify their sources.">↗ Extract a table</button><button type="button" data-prompt="Visualize relevant numbers from these files. Explain what the chart shows.">↗ Visualize</button></div>
-          <button class="generate" type="submit" id="generate"><span aria-hidden="true">✧</span> Generate <span aria-hidden="true">↗</span></button>
-        </form>
-        <p class="status" id="status" role="status" aria-live="polite"></p><p class="credit-note">Uses 0G credits.</p>
+
       </section>
-      <section class="preview-panel" aria-label="Generated dashboard">
-        <div class="preview-toolbar"><div class="tabs" role="tablist" aria-label="Output view"><button id="preview-tab" role="tab" aria-selected="true" aria-controls="dashboard" class="selected">◫ Preview</button><button id="schema-tab" role="tab" aria-selected="false" aria-controls="schema" tabindex="-1">{ } React source</button></div><button id="export" class="export" disabled>↓ Export JSX</button></div>
-        <div class="preview-context"><span id="preview-state">Waiting for your data</span><span id="component-count">No generation yet</span></div>
-        <div id="dashboard" role="tabpanel" aria-labelledby="preview-tab"></div>
-        <pre id="schema" role="tabpanel" aria-labelledby="schema-tab" hidden tabindex="0">Send a message to generate React source.</pre>
-        <footer class="preview-footer"><span aria-hidden="true">◇</span><span id="provenance"></span></footer>
+      <div class="intro-strip"><span>FROM DOCUMENTS TO DIRECTION</span><p>Less time piecing things together.<br>More room to think about what comes next.</p><span class="strip-star" aria-hidden="true">✳</span></div>
+      <section class="workflow" id="how-it-works" aria-labelledby="workflow-heading">
+        <div class="section-heading"><p class="eyebrow">A CONVERSATION, WITH CONTEXT</p><h2 id="workflow-heading">Start with what you have.</h2><p>No dashboard to configure. No perfect spreadsheet required.</p></div>
+        <div class="steps"><article><span class="step-number">01 / BRING</span><h3>The details live here.</h3><p>Upload a report, spreadsheet, image, or text file. Start with a fictional sample if you’re just exploring.</p></article><article><span class="step-number">02 / ASK</span><h3>Follow your curiosity.</h3><p>Compare expenses, explore a forecast, or ask for the bigger picture. Your question guides the analysis.</p></article><article><span class="step-number">03 / SHAPE</span><h3>Make the answer yours.</h3><p>Get a custom React dashboard. Ask a follow-up to change the chart, explore an assumption, or refine the view.</p></article></div>
       </section>
-    </div>
-    <footer class="page-footer"><span>Built for questions that deserve a clearer answer.</span><span>Prototype · Use fictional data.</span></footer>
+      <section class="privacy-section" id="privacy" aria-labelledby="privacy-title">
+        <div class="privacy-copy"><p class="eyebrow">POWERED BY 0G PRIVATE COMPUTER</p><h2 id="privacy-title">Your context is valuable.<br>Let’s keep it private.</h2><p>Manifest HQ requests Private inference on 0G: the model runs inside hardware-isolated enclaves. According to 0G, its Router retains usage metadata, not your prompts or responses.</p><a class="privacy-link" href="https://0g.ai/blog/data-privacy-on-0g-private-computer" target="_blank" rel="noopener noreferrer">Explore 0G’s privacy approach ↗</a></div>
+        <div class="privacy-facts"><div><span>01</span><p><strong>Private inference</strong>Enclave-based computation, without a silent fallback to a lower trust tier.</p></div><div><span>02</span><p><strong>A session, not a document library</strong>Manifest HQ does not save your files or conversations as a persistent library.</p></div><details><summary>What is stored?</summary><p>Local technical logs and 0G billing records keep metadata. PDF extraction uses temporary files that are removed afterward. The local backend processes plaintext; independent attestation verification is not implemented. Use fictional data while testing.</p></details></div>
+      </section>
+      <section class="closing" aria-labelledby="closing-title"><p class="eyebrow">THE NEXT QUESTION IS YOURS.</p><h2 id="closing-title">What will you make of it?</h2><a class="button" href="studio.html">Try Manifest HQ <span aria-hidden="true">↗</span></a><p>Start with a sample. See where the conversation takes you.</p></section>
+    </main>
+    <footer class="site-footer"><a class="wordmark" href="index.html"><span>manifest</span><small>HQ</small></a><span>A private space for a clearer picture.</span><a href="studio.html">Enter the studio ↗</a></footer>
   </div>
-</main>
-<dialog id="privacy-dialog">
-  <button id="close-dialog" class="close" aria-label="Close details">×</button><p class="eyebrow">A REAL REQUEST. A VISIBLE RESULT.</p><h2>From documents to answers.</h2>
-  <ol><li>Upload text PDFs, text, CSV, JSON, DOCX, XLSX, PPTX, or ODT files. Images use model vision; scanned PDFs need conversion to images or text.</li><li>Configure the local backend using the root .env file.</li><li>Your document text, question, recent conversation, and previous component are sent through the backend to 0G using Private routing.</li><li>0G writes React. The backend compiles it and the browser renders an isolated preview. Follow-ups revise the dashboard.</li></ol>
-  <p>Source references and calculations need checking. Original files and generated source are not persisted by the app; sanitized request metadata is logged locally. The local backend handles plaintext documents and source. Private routing is requested from 0G; it is not a claim that the entire app is end-to-end encrypted.</p>
-  <p>Provider errors are shown explicitly. The app never substitutes a fake AI response or silently changes providers.</p>
-  <details class="connection"><summary>Request diagnostics</summary><p id="diagnostics-status">No request yet. Keys and document content are excluded.</p><pre id="diagnostics-output" class="source-preview"></pre></details>
-</dialog>
-</body></html>
+</body>
+</html>
