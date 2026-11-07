@@ -63,7 +63,7 @@ export default function App(){
     assert.equal(await ocean.getAttribute('data-motion'),'still');
     assert.equal(await page.getByRole('button',{name:'Still scene',exact:true}).isDisabled(),true);
     await page.locator('.privacy-facts summary').click();
-    assert.ok(await page.getByText('Local technical logs and 0G billing records keep metadata.',{exact:false}).isVisible());
+    assert.ok(await page.getByText('Technical logs record request metadata, not document contents.',{exact:false}).isVisible());
     await page.setViewportSize({width:1440,height:1100});
     await page.getByRole('link',{name:'Open studio'}).click();
     await page.waitForURL('**/studio.html');
@@ -81,7 +81,7 @@ export default function App(){
     await page.locator('#prompt').fill('Project profits and make the graph pink.');await page.locator('#generate').click();
     const frame=page.frameLocator('#preview-frame');
     await frame.getByRole('heading',{name:'Projected profits'}).waitFor({timeout:20000});
-    await page.waitForFunction(()=>document.getElementById('status').textContent.includes('React is running'));
+    await page.waitForFunction(()=>document.getElementById('status').textContent.includes('Your dashboard is ready'));
     assert.equal(await frame.locator('rect').evaluate(el=>getComputedStyle(el).fill),'rgb(219, 39, 119)');
     await frame.getByRole('button',{name:'Explore 0'}).click();await frame.getByRole('button',{name:'Explore 1'}).waitFor();
     assert.equal(await frame.locator('#parent-access').innerText(),'Parent access: blocked');
@@ -101,7 +101,7 @@ export default function App(){
     assert.equal(context.previousModule.source,'export default function App(){return <div>}');assert.ok(context.previousModule.compilationError.includes('Compilation failed'));assert.equal(context.conversation.length,2);
     mode='truncated';await page.locator('#prompt').fill('Expand the analysis');await page.locator('#generate').click();await page.waitForFunction(()=>document.getElementById('status').textContent.includes('MAX_TOKENS'));
     assert.equal(await page.frameLocator('#preview-frame').getByRole('heading',{name:'Revised React view'}).count(),1);
-    mode='runtime';await page.locator('#prompt').fill('Try another');await page.locator('#generate').click();await page.waitForFunction(()=>document.getElementById('status').textContent.includes('failed at runtime'));
+    mode='runtime';await page.locator('#prompt').fill('Try another');await page.locator('#generate').click();await page.waitForFunction(()=>document.getElementById('status').textContent.includes('dashboard could not be displayed'));
     assert.ok((await page.locator('#chat-log').innerText()).includes('Test render failure'));
     await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
     assert.deepEqual(errors,[]);

@@ -15,7 +15,7 @@
 .hero-copy{max-width:720px;position:relative}
 .hero-description{max-width:470px;color:#405c78}
 .hero-footnote{color:#3c638e}
-.site-header{position:relative;background:#fbfcffb8}
+.site-header{position:relative;background:#fbfcffb8;padding-inline:clamp(16px,2.5vw,32px)}
 .workflow,.intro-strip,.closing,.site-footer{position:relative;background:#fbfcffe8;backdrop-filter:blur(6px)}
 .workflow{padding-inline:32px;border-radius:18px}
 .intro-strip{padding-inline:32px}

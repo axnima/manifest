@@ -12,13 +12,13 @@ Instrument Serif provides the wordmark and display headings; Manrope provides re
 
 The wordmark reveals on load with an underline and a delayed HQ badge. A small decorative orbit moves slowly on the privacy card. All animation is restricted to `prefers-reduced-motion: no-preference`; reduced-motion users see the final static state.
 
-Privacy copy is based on [0G's privacy explanation](https://0g.ai/blog/data-privacy-on-0g-private-computer): requested Private routing uses enclave inference, while the Router retains billing/usage metadata rather than prompts or responses. The expandable disclosure explains the local plaintext backend, temporary PDF files, metadata logs, and absence of independent attestation verification. It deliberately does not claim that nothing is stored anywhere.
+Privacy copy is based on [0G's privacy explanation](https://0g.ai/blog/data-privacy-on-0g-private-computer): requested Private routing uses enclave inference, while the Router retains billing/usage metadata rather than prompts or responses. The expandable disclosure explains the plaintext server, temporary PDF files, metadata logs, and absence of independent attestation verification. It deliberately does not claim that nothing is stored anywhere.
 
 The native file input remains transparent over one dropzone, preserving file selection, keyboard access, focus indication, and drag/drop without a second visible picker button.
 
 ## Landing page and navigation
 
-The root `public/index.html` introduces Manifest HQ with a bright blue atmospheric background, matching local fonts, an interactive ASCII ocean, a three-step workflow, and privacy details. It does not make inference calls. Top navigation and hero/footer links lead to `studio.html`, which retains the complete existing upload/chat/React workspace. The studio wordmark returns home. Landing styles are isolated in `public/landing.css`. Motion respects reduced-motion settings.
+The root `public/index.html` introduces Manifest HQ with a bright blue atmospheric background, matching local fonts, an interactive ASCII ocean, a three-step workflow, and privacy details. It does not make inference calls. The single **Open studio** hero button leads to `studio.html`, which retains the complete existing upload/chat/React workspace. The studio wordmark returns home. Landing styles are isolated in `public/landing.css`. Motion respects reduced-motion settings.
 
 ## ASCII Sharks
 
@@ -27,3 +27,7 @@ The actual MIT-licensed OceanEngine from [stackedlol/ascii-sharks](https://githu
 The original dark rendering receives a light CSS color treatment and a directional veil behind the copy; the original rendering and physics are retained. The canvas is decorative and hidden from assistive technology; its caption and controls remain accessible. The existing esbuild dependency creates the checked-in `public/ascii-ocean.js`, including the MIT license. No runtime dependencies or external script hosts were added.
 
 The ASCII canvas now sits behind the full landing page rather than in an illustration card. It ignores pointer hit-testing, keeping links usable; its pause control and attribution remain in a small fixed control group. Translucent surfaces and a directional veil preserve text contrast. The studio uses cobalt, pale blue, and navy consistently, including its wordmark accents.
+
+## Product copy
+
+Help text describes uploading, asking, and refining without developer setup instructions. The help dialog groups file limits, privacy/storage, implementation details, and diagnostics in expandable sections. Status and recovery messages work for hosted and local use; setup stays in README.md. Private routing is described as requested, provider retention claims are attributed to 0G, and server plaintext processing and metadata logging remain disclosed.

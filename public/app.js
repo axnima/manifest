@@ -64,7 +64,7 @@ async function upload(files) {
       }catch(error){errors.push(`${file.name}: ${error.message}`);}
     }
     if(added){renderFiles();resetChat();}
-    uploadStatus(`${added?`Loaded ${added} file(s). `:''}${errors.join(' ')}`,errors.length>0);
+    uploadStatus(`${added?`Loaded ${added} ${added===1?'file':'files'}. `:''}${errors.join(' ')}`,errors.length>0);
   }finally{setBusy(false);}
 }
 let previewTimer;
@@ -77,10 +77,10 @@ function renderDashboard() {
   frame.referrerPolicy='no-referrer';
   frame.onload=()=>frame.contentWindow.postMessage({type:'render',javascript:generated.javascript},'*');
   frame.src='preview.html';root.append(frame);
-  previewTimer=setTimeout(()=>{if($('preview-frame')===frame){$('status').textContent='Compiled React has not mounted yet. Inspect the generated source or ask for a simpler component.';}},10000);
+  previewTimer=setTimeout(()=>{if($('preview-frame')===frame){$('status').textContent='The dashboard is taking longer to open. Inspect its React source or ask for a simpler version.';}},10000);
   $('schema').textContent=generated.source;
-  $('preview-state').textContent='React compiled on the local server';$('component-count').textContent='Isolated React preview';
-  $('provenance').textContent=`${generated.meta.model} · private routing · Request ${generated.meta.responseId||generated.meta.requestId} · ${generated.meta.usage?.total_tokens??'?'} tokens${generated.meta.estimatedCostUsd!=null?' · estimated $'+generated.meta.estimatedCostUsd.toFixed(5):''}`;
+  $('preview-state').textContent='Dashboard ready';$('component-count').textContent='Sandboxed preview';
+  $('provenance').textContent=`${generated.meta.model} · private routing requested · Request ${generated.meta.responseId||generated.meta.requestId} · ${generated.meta.usage?.total_tokens??'?'} tokens${generated.meta.estimatedCostUsd!=null?' · estimated $'+generated.meta.estimatedCostUsd.toFixed(5):''}`;
   $('export').disabled=false;
 }
 addEventListener('message',event=>{
@@ -91,16 +91,16 @@ addEventListener('message',event=>{
     const text=typeof event.data.message==='string'?event.data.message.slice(0,1500):'Unknown runtime error';
     failedAttempt={source:generated.source,runtimeError:text};
     recordDiagnostics({requestId:generated.meta.requestId,model:generated.meta.model,stage:'runtime',success:false});
-    message('error','React runtime error: '+text);$('status').textContent='The generated component failed at runtime. Ask 0G to fix the error.';
-  }else{$('status').textContent='Generated React is running. Ask a follow-up to change it.';}
+    message('error','React runtime error: '+text);$('status').textContent='The dashboard could not be displayed. Ask the assistant to fix it.';
+  }else{$('status').textContent='Your dashboard is ready. Ask a follow-up to refine it.';}
 });
 async function compileReact(source) {
   let response;
   try{response=await fetch('/api/compile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source}),signal:AbortSignal.timeout(20000)});}
-  catch{throw new Error('Could not reach the local compiler. Restart npm start and try again.');}
-  if(response.status===404||response.status===501)throw new Error('Restart npm start to enable the React compilation endpoint.');
+  catch{throw new Error('Could not prepare the dashboard. Check your connection and try again.');}
+  if(response.status===404||response.status===501)throw new Error('Dashboard compilation is unavailable. Contact the app administrator.');
   const result=await response.json();
-  if(!response.ok||typeof result.javascript!=='string')throw new Error(result.error||'Compilation failed. Run npm install and restart npm start.');
+  if(!response.ok||typeof result.javascript!=='string')throw new Error(result.error||'The dashboard could not be compiled. Ask for a simpler version or contact the app administrator.');
   return result.javascript;
 }
 function setTab(json) {
@@ -115,23 +115,23 @@ function setBusy(value) {
 }
 async function recordDiagnostics(data,persist=true) {
   $('diagnostics-output').textContent=JSON.stringify(data,null,2);
-  if(!persist){$('diagnostics-status').textContent='Backend recorded inference metadata in .local-artifacts/inference.jsonl';return;}
-  $('diagnostics-status').textContent='Saving local diagnostics…';
+  if(!persist){$('diagnostics-status').textContent='Request metadata is shown below. Document contents and API keys are excluded.';return;}
+  $('diagnostics-status').textContent='Saving request diagnostics…';
   try {
     const response=await fetch('/api/diagnostics',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data),signal:AbortSignal.timeout(3000)});
     if(!response.ok)throw new Error('Log save failed');
-    $('diagnostics-status').textContent='Saved to .local-artifacts/inference.jsonl';
-  }catch{$('diagnostics-status').textContent='Could not save diagnostics. Restart with npm start; details remain below.';}
+    $('diagnostics-status').textContent='Request diagnostics saved on the server.';
+  }catch{$('diagnostics-status').textContent='Could not save request diagnostics. Details are still available below.';}
 }
 $('prompt-form').onsubmit=async event=>{
   event.preventDefault();if(busy)return;
   const prompt=$('prompt').value.trim();
   if(!documents.length){uploadStatus('Upload a file first.',true);return;}
   if(!prompt){$('status').textContent='Enter a message first.';return;}
-  setBusy(true);message('user',prompt);$('status').textContent='Sending your data and message to 0G. Waiting for React source…';
+  setBusy(true);message('user',prompt);$('status').textContent='0G is analysing your files and creating your dashboard…';
   try {
     const result=await DocumentModel.generate({documents,prompt,history,previous:failedAttempt??generated?.source??null,signal:AbortSignal.timeout(200000),onDiagnostics:data=>recordDiagnostics(data,false)});
-    $('status').textContent='React received. Compiling on the local server…';
+    $('status').textContent='Preparing your dashboard…';
     let javascript;
     const compileStarted=Date.now();
     try{javascript=await compileReact(result.source);}
@@ -144,7 +144,7 @@ $('prompt-form').onsubmit=async event=>{
     await recordDiagnostics({requestId:result.meta.requestId,model:result.meta.model,stage:'compile',success:true,durationMs:Date.now()-compileStarted});
     generated={...result,javascript};history.push({role:'user',text:prompt},{role:'assistant',text:result.reply});history=history.slice(-8);
     renderDashboard();setTab(false);message('assistant',result.reply);$('prompt').value='';
-    $('status').textContent='React compiled. Starting the isolated preview…';
+    $('status').textContent='Opening your dashboard…';
   }catch(error){message('error',error.message);$('status').textContent=error.message+(generated?' The previous dashboard is unchanged.':' No dashboard was generated.');}
   finally{setBusy(false);$('prompt').focus();}
 };

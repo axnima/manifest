@@ -48,7 +48,7 @@ def extract(data, kind):
                     raise ValueError('No PDF text found. Scanned PDFs require OCR; export as text first.')
                 return text
         except FileNotFoundError as exc:
-            raise ValueError('PDF extraction needs pdftotext. Install poppler-utils and restart.') from exc
+            raise ValueError('PDF extraction is unavailable. The app administrator must install pdftotext (Poppler).') from exc
         except subprocess.TimeoutExpired as exc:
             raise ValueError('PDF extraction timed out. Use a smaller document.') from exc
     if kind not in {'docx', 'xlsx', 'pptx', 'odt'}:
@@ -115,13 +115,13 @@ def compile_component(data):
     try:
         result = subprocess.run(['node', '--max-old-space-size=128', str(ROOT/'scripts/compile.cjs')], input=json.dumps({'source': source}), capture_output=True, text=True, cwd=ROOT, timeout=15)
     except FileNotFoundError as exc:
-        raise ValueError('Node.js is required. Install Node and run npm install.') from exc
+        raise ValueError('Dashboard compilation is unavailable. The app administrator must install Node.js and the app dependencies.') from exc
     except subprocess.TimeoutExpired as exc:
         raise ValueError('Compilation timed out. Ask for a smaller component.') from exc
     try:
         payload = json.loads(result.stdout)
     except (ValueError, TypeError) as exc:
-        raise ValueError('Compiler unavailable. Run npm install and restart npm start.') from exc
+        raise ValueError('Dashboard compilation is unavailable. Contact the app administrator.') from exc
     if result.returncode != 0:
         raise ValueError('Compilation failed: ' + str(payload.get('error', 'Unknown compiler error'))[:2000])
     return payload
@@ -240,7 +240,7 @@ def generate_component(data):
         base = os.environ.get('ZERO_G_BASE_URL', 'https://router-api.0g.ai/v1').rstrip('/')
         model = os.environ.get('ZERO_G_MODEL', '0gm-1.0-35b-a3b').strip()
         if not key:
-            raise InferenceError('Set ZERO_G_API_KEY in the root .env file and restart npm start.', 503)
+            raise InferenceError('The analysis service is not configured. The app administrator must set ZERO_G_API_KEY on the server.', 503)
         if base != 'https://router-api.0g.ai/v1':
             raise InferenceError('ZERO_G_BASE_URL must be https://router-api.0g.ai/v1 for this mainnet integration.', 503)
         if not re.fullmatch(r'[A-Za-z0-9_.:/-]{1,180}', model):

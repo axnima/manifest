@@ -20,8 +20,8 @@ const DocumentModel = (() => {
     if(mimeType==='application/pdf'||['docx','xlsx','pptx','odt'].includes(ext)){
       let response;
       try{response=await fetcher(`/api/extract?format=${mimeType==='application/pdf'?'pdf':ext}`,{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:bytes,signal:AbortSignal.timeout(20000)});}
-      catch{throw new Error('Local document extraction failed. Restart with npm start and try again.');}
-      if(response.status===501||response.status===404)throw new Error('Restart the local server with npm start to enable PDF and Office parsing.');
+      catch{throw new Error('Could not read this document. Check your connection and try again.');}
+      if(response.status===501||response.status===404)throw new Error('Document extraction is unavailable. Try a text file or contact the app administrator.');
       const result=await response.json();if(!response.ok)throw new Error(result.error||'Could not extract this document.');text=result.text;
     }else{
       try{text=new TextDecoder('utf-8',{fatal:true}).decode(bytes);}
@@ -100,10 +100,10 @@ const DocumentModel = (() => {
       body:JSON.stringify({documents:documents.map(({name,text,mimeType,base64})=>base64?{name,mimeType,base64}:{name,text}),prompt,history:history.slice(-8),previous,verifiedCalculations})
     });}catch(error){
       if(error.name==='AbortError'||error.name==='TimeoutError')throw new Error('Generation timed out or was cancelled. The provider may still finish and charge for this request.');
-      throw new Error('Could not reach the local 0G backend. Restart npm start and try again.');
+      throw new Error('Could not reach the analysis service. Check your connection and try again.');
     }
     let result;
-    try{result=await response.json();}catch{throw new Error('The local backend returned an unreadable response.');}
+    try{result=await response.json();}catch{throw new Error('The analysis service returned an unreadable response. Try again later.');}
     if(result.diagnostics){try{await onDiagnostics(result.diagnostics);}catch{}}
     if(!response.ok)throw new Error(result.error||`0G request failed (HTTP ${response.status}).`);
     return {...validateComponent(result),meta:result.meta};

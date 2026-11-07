@@ -19,7 +19,7 @@ assert.equal(analyze(parseCSV(sample)).nextMonthForecast,543333.33);
   assert.equal(pdf.mimeType,'text/plain');assert.equal(pdf.text,'Revenue 1240000');
   const image=await readFile(file('image.png',new Uint8Array([137,80,78,71,13,10,26,10,1])));assert.equal(image.mimeType,'image/png');assert.ok(image.base64);
   const office=await readFile(file('notes.docx','placeholder'),async(url,init)=>{assert.equal(url,'/api/extract?format=docx');assert.equal(init.method,'POST');return {ok:true,json:async()=>({text:'Extracted memo'})};});assert.equal(office.text,'Extracted memo');
-  await assert.rejects(readFile(file('notes.docx','placeholder'),async()=>({status:501})),/Restart/);
+  await assert.rejects(readFile(file('notes.docx','placeholder'),async()=>({status:501})),/Document extraction is unavailable/);
   await assert.rejects(readFile(file('bad.bin',new Uint8Array([0,1,2,255]))),/binary/);
   await assert.rejects(readFile(file('empty.txt','')),/non-empty/);
   await assert.rejects(readFile(file('big.txt','a'.repeat(MAX_BYTES+1))),/4 MB/);
