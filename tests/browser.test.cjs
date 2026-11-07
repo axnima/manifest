@@ -31,7 +31,7 @@ export default function App(){
       if(mode==='invalid')source='export default function App(){return <div>}';
       if(mode==='runtime')source="export default function App(){throw new Error('Test render failure')}";
       latestSource=source;
-      await route.fulfill({json:{title:'Profit view',reply:'Here is the custom React view.',source,meta:{requestId:'local-id',model:'0gm-1.0-35b-a3b',responseId:'test-response',trustMode:'private',usage:{total_tokens:2000},estimatedCostUsd:0.001}}});
+      await route.fulfill({json:{title:'Profit view',reply:'Here is the custom React view.',source,meta:{requestId:'local-id',model:mode==='fallback'?'gemini-3.8-flash':'0gm-1.0-35b-a3b',responseId:'test-response',provider:mode==='fallback'?'Gemini':'0G',fallbackFrom:mode==='fallback'?'0G':null,primaryHttpStatus:mode==='fallback'?503:null,trustMode:mode==='fallback'?'standard':'private',usage:{total_tokens:2000},estimatedCostUsd:0.001}}});
     });
     await page.goto(origin);
     await page.getByRole('heading',{name:'Your numbers. A clearer picture.'}).waitFor();
@@ -103,6 +103,10 @@ export default function App(){
     assert.equal(await page.frameLocator('#preview-frame').getByRole('heading',{name:'Revised React view'}).count(),1);
     mode='runtime';await page.locator('#prompt').fill('Try another');await page.locator('#generate').click();await page.waitForFunction(()=>document.getElementById('status').textContent.includes('dashboard could not be displayed'));
     assert.ok((await page.locator('#chat-log').innerText()).includes('Test render failure'));
+    mode='fallback';await page.locator('#prompt').fill('Try the dashboard again');await page.locator('#generate').click();
+    await page.frameLocator('#preview-frame').getByRole('heading',{name:'Projected profits'}).waitFor();
+    assert.ok((await page.locator('#provenance').innerText()).includes('Gemini · gemini-3.8-flash · Google API · not 0G private inference'));
+    assert.ok((await page.locator('#chat-log').innerText()).includes('0G returned HTTP 503. Gemini'));
     await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
     assert.deepEqual(errors,[]);
     console.log('Browser checks passed: ASCII render/pause/reduced motion, landing navigation, real backend compilation, pink JSX/SVG, React hooks, parent-key isolation, network blocking, source/export, follow-ups, compile/runtime/truncation errors, mobile. 0G backend responses intercepted; no live inference.');

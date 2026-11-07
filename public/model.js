@@ -14,7 +14,7 @@ const DocumentModel = (() => {
     else if(new TextDecoder().decode(bytes.slice(0,4))==='RIFF'&&new TextDecoder().decode(bytes.slice(8,12))==='WEBP') mimeType='image/webp';
     if(mimeType?.startsWith('image/')){
       let binary='';for(let i=0;i<bytes.length;i+=32768)binary+=String.fromCharCode(...bytes.subarray(i,i+32768));
-      return {name:file.name,size:file.size,mimeType,base64:btoa(binary),description:'Image ready for 0G visual analysis'};
+      return {name:file.name,size:file.size,mimeType,base64:btoa(binary),description:'Image ready for visual analysis'};
     }
     let text;
     if(mimeType==='application/pdf'||['docx','xlsx','pptx','odt'].includes(ext)){
@@ -34,7 +34,7 @@ const DocumentModel = (() => {
   }
 
   function validateComponent(value) {
-    if(!value||typeof value.title!=='string'||!value.title.trim()||value.title.length>120||typeof value.reply!=='string'||!value.reply.trim()||value.reply.length>4000||typeof value.source!=='string'||!value.source.trim()||new TextEncoder().encode(value.source).length>200*1024)throw new Error('0G returned an invalid React module. Try again.');
+    if(!value||typeof value.title!=='string'||!value.title.trim()||value.title.length>120||typeof value.reply!=='string'||!value.reply.trim()||value.reply.length>4000||typeof value.source!=='string'||!value.source.trim()||new TextEncoder().encode(value.source).length>200*1024)throw new Error('The AI provider returned an invalid React module. Try again.');
     return {title:value.title,reply:value.reply,source:value.source};
   }
   // shortcut: a two-column monthly CSV only; use a CSV library for arbitrary text fields or other schemas.
@@ -105,7 +105,7 @@ const DocumentModel = (() => {
     let result;
     try{result=await response.json();}catch{throw new Error('The analysis service returned an unreadable response. Try again later.');}
     if(result.diagnostics){try{await onDiagnostics(result.diagnostics);}catch{}}
-    if(!response.ok)throw new Error(result.error||`0G request failed (HTTP ${response.status}).`);
+    if(!response.ok)throw new Error(result.error||`Analysis request failed (HTTP ${response.status}).`);
     return {...validateComponent(result),meta:result.meta};
   }
   return {MODEL,MAX_BYTES,MAX_TOTAL,readFile,parseCSV,analyze,validateComponent,generate};

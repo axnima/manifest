@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#2457e5">
   <link rel="preload" href="fonts/manrope-variable.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="preload" href="fonts/instrument-serif.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="stylesheet" href="style.css?v=blue-2"><script src="model.js?v=copy-2" defer></script><script src="app.js?v=copy-2" defer></script>
+  <link rel="stylesheet" href="style.css?v=blue-2"><script src="model.js?v=fallback-3" defer></script><script src="app.js?v=fallback-3" defer></script>
 </head>
 <body>
 <aside class="sidebar">
@@ -22,7 +22,7 @@
   <div class="sidebar-signoff"><span class="signoff-symbol" aria-hidden="true">✳</span><p>A workspace for<br>better questions.</p><small>Powered by 0G Private Computer</small></div>
 </aside>
 <main id="studio">
-  <header class="topbar"><button class="quiet-button" id="details-button" type="button">Details</button><span class="demo-pill"><i></i> 0G · Private routing requested</span></header>
+  <header class="topbar"><button class="quiet-button" id="details-button" type="button">Details</button><span class="demo-pill"><i></i> 0G first · optional Gemini fallback</span></header>
   <div class="page">
     <section class="page-heading" aria-label="Welcome to Manifest HQ">
       <div class="hero-copy">
@@ -33,9 +33,9 @@
       </div>
       <aside class="privacy-card" aria-labelledby="privacy-heading">
         <div class="privacy-kicker"><span class="privacy-symbol" aria-hidden="true"><img src="favicon.svg" alt="" width="34" height="34"><span class="orbit-dot"></span></span><span>POWERED BY 0G PRIVATE COMPUTER</span></div>
-        <h2 id="privacy-heading">Your documents.<br> Private AI inference.</h2>
-        <p>We request private routing on 0G. According to 0G, this runs the model in a hardware-isolated enclave, and its Router retains usage metadata rather than prompts or responses.</p>
-        <details class="privacy-notes"><summary>What gets stored?</summary><p>Files, chat, and dashboards are kept for this session, not saved as a library. The server processes document contents and uses temporary files to extract PDF text, then removes them. Request logs contain technical metadata, not your document contents.</p><p>The server can read the content it processes. Private routing protects the inference step; manifest HQ does not independently verify 0G’s hardware attestations.</p><a href="https://0g.ai/blog/data-privacy-on-0g-private-computer" target="_blank" rel="noopener noreferrer">Read 0G’s privacy explanation ↗</a></details>
+        <h2 id="privacy-heading">0G first.<br> Gemini as a backup.</h2>
+        <p>We request private routing on 0G. If Gemini fallback is enabled and 0G returns a non-200 response, the request goes to Google instead. The result shows which provider answered.</p>
+        <details class="privacy-notes"><summary>What gets stored?</summary><p>Files, chat, and dashboards are kept for this session, not saved as a library. The server processes document contents and uses temporary files to extract PDF text, then removes them. Request logs contain technical metadata, not your document contents.</p><p>The server can read the content it processes. Gemini fallback sends your document content and conversation context to Google under its API terms, without 0G private routing. Google’s free tier may use content to improve its products. Manifest HQ does not independently verify 0G’s hardware attestations.</p><a href="https://0g.ai/blog/data-privacy-on-0g-private-computer" target="_blank" rel="noopener noreferrer">Read 0G’s privacy explanation ↗</a></details>
       </aside>
     </section>
     <div class="studio-layout">
@@ -56,7 +56,7 @@
           <div class="suggestions"><button type="button" data-prompt="Summarize the attached documents and highlight the main points.">↗ Summarize</button><button type="button" data-prompt="Extract the important facts into a table and identify their sources.">↗ Extract a table</button><button type="button" data-prompt="Visualize relevant numbers from these files. Explain what the chart shows.">↗ Visualize</button></div>
           <button class="generate" type="submit" id="generate"><span aria-hidden="true">✧</span> Generate <span aria-hidden="true">↗</span></button>
         </form>
-        <p class="status" id="status" role="status" aria-live="polite"></p><p class="credit-note">Uses 0G credits.</p>
+        <p class="status" id="status" role="status" aria-live="polite"></p><p class="credit-note">Uses provider credits.</p>
       </section>
       <section class="preview-panel" aria-label="Generated dashboard">
         <div class="preview-toolbar"><div class="tabs" role="tablist" aria-label="Output view"><button id="preview-tab" role="tab" aria-selected="true" aria-controls="dashboard" class="selected">◫ Preview</button><button id="schema-tab" role="tab" aria-selected="false" aria-controls="schema" tabindex="-1">{ } React source</button></div><button id="export" class="export" disabled>↓ Export JSX</button></div>
@@ -74,13 +74,13 @@
   <h2 id="details-title">From documents to dashboards</h2>
   <ol>
     <li><strong>Bring your files.</strong> Upload a report, spreadsheet, image, or text file. You can also try the fictional sample.</li>
-    <li><strong>Ask what you need.</strong> Request a summary, comparison, chart, or forecast. Relevant file contents and conversation context are sent to 0G with private routing requested.</li>
+    <li><strong>Ask what you need.</strong> Request a summary, comparison, chart, or forecast. Relevant file contents and conversation context go to 0G first. If enabled, Gemini is used after a non-200 response.</li>
     <li><strong>Refine the result.</strong> Your answer appears as an interactive dashboard. Ask a follow-up to change it, or inspect and export its React source.</li>
   </ol>
   <p>AI can make mistakes. Check important figures and source references before relying on the result. Forecasts are estimates based on the available data and stated assumptions.</p>
   <details><summary>Supported files</summary><p>Upload PDF, PNG, JPEG, WebP, CSV, JSON, DOCX, XLSX, PPTX, ODT, or other UTF-8 text files. Up to 5 files, 4 MB each, and 8 MB total. PDFs must contain selectable text and be no longer than 100 pages. Convert scanned PDFs to text or supported images first. Office formatting and embedded images are not preserved; spreadsheet formulas are not recalculated.</p></details>
-  <details><summary>Privacy and storage</summary><p>Files, chat, and generated dashboards are not saved between visits. Export the React source if you want to keep a copy. The server processes readable document content; PDF extraction uses temporary files that are removed afterward.</p><p>Technical logs record request IDs, timing, status, and usage where available. They exclude document contents, chat messages, API keys, and generated source. According to 0G, its Router also retains usage metadata rather than prompts or responses.</p><p>We request private inference without a fallback to a lower privacy tier. This protects the model’s inference step; it does not make the entire app end-to-end encrypted. Manifest HQ does not independently verify hardware attestations.</p></details>
-  <details><summary>How the dashboard is generated</summary><p>0G returns an explanation and React code. The server compiles the code, then your browser displays it in a sandboxed preview. If generation or compilation fails, you’ll see an error. No placeholder answer is substituted.</p></details>
+  <details><summary>Privacy and storage</summary><p>Files, chat, and generated dashboards are not saved between visits. Export the React source if you want to keep a copy. The server processes readable document content; PDF extraction uses temporary files that are removed afterward.</p><p>Technical logs record request IDs, timing, status, and usage where available. They exclude document contents, chat messages, API keys, and generated source. According to 0G, its Router also retains usage metadata rather than prompts or responses.</p><p>0G requests use private routing. If Gemini fallback is enabled, a non-200 response triggers one attempt through Google’s API. Google receives the same document content and conversation context under its own terms; its free tier may use that content to improve products. Gemini results are not covered by 0G private inference. The app is not end-to-end encrypted and does not independently verify hardware attestations.</p></details>
+  <details><summary>How the dashboard is generated</summary><p>The responding provider returns an explanation and React code. The server compiles the code, then your browser displays it in a sandboxed preview. If generation or compilation fails, you’ll see an error. No placeholder answer is substituted.</p></details>
   <details class="connection"><summary>Request diagnostics</summary><p id="diagnostics-status">No request yet. Technical details will appear here after you generate a dashboard.</p><pre id="diagnostics-output" class="source-preview"></pre></details>
 </dialog>
 </body></html>

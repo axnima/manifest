@@ -66,9 +66,24 @@ This is a demo deployment, not a hardened public service. There is no user authe
 3. Ask what you need: “Summarize this memo,” “Compare expenses with the budget,” “Extract the action items into a table,” or “Forecast next month and explain your assumptions.”
 4. Inspect the answer, source/method notes, and the React source tab. Ask follow-ups to refine it.
 
-Files and conversations stay in session memory. The browser calls the same-origin `/api/generate` endpoint. The backend holds the key and sends document text/images, conversation, and previous source to 0G with `X-0G-Provider-Trust-Mode: private`. It never silently falls back to another provider or lower trust tier. The backend handles plaintext; this is not end-to-end encryption of the whole app. Use fictional data during testing.
+Files and conversations stay in session memory. The browser calls the same-origin `/api/generate` endpoint. The backend holds the key and sends document text/images, conversation, and previous source to 0G with `X-0G-Provider-Trust-Mode: private`. When `GEMINI_API_KEY` is set, a non-200 HTTP response triggers one Gemini attempt through Google’s API. The UI explicitly identifies fallback results. Without that key, requests stay on 0G. The backend handles plaintext; this is not end-to-end encryption of the whole app. Use fictional data during testing.
 
-Generation is limited to one in-flight request and 6,000 output tokens, with a 180-second provider timeout and no automatic retries. A timeout or closing the tab does not guarantee cancellation of provider billing. Receipts show provider/local request IDs, requested private routing, token usage, and an estimated cost for 0GM based on current promotional rates ($0.08/M input, $0.48/M output). This is an estimate, not a billing balance or verified attestation; prices can change. Check actual credits in your 0G dashboard.
+Generation is limited to one in-flight request. 0G has a 6,000-token output cap and 180-second timeout. Optional Gemini fallback has a 16,384-token output cap and 60-second timeout, with no further retries. Browser generation waits up to 280 seconds to cover both attempts. A timeout or closing the tab does not guarantee cancellation of provider billing. Receipts show provider/local request IDs, requested private routing, token usage, and an estimated cost for 0GM based on current promotional rates ($0.08/M input, $0.48/M output). This is an estimate, not a billing balance or verified attestation; prices can change. Check actual credits in your 0G dashboard.
+
+## Optional Gemini fallback
+
+Add these runtime variables to `.env` locally or to Render’s Environment settings, then restart/redeploy:
+
+```dotenv
+GEMINI_API_KEY=your_google_ai_studio_key
+GEMINI_MODEL=gemini-3.8-flash
+```
+
+A non-empty `GEMINI_API_KEY` enables fallback; remove it or leave it blank for 0G-only operation. The default model is `gemini-3.8-flash`; choose a model available to your account. The Google endpoint is fixed server-side to its [OpenAI-compatible API](https://ai.google.dev/gemini-api/docs/openai). No Google SDK or browser API key is needed.
+
+The backend tries 0G first. Only a non-200 provider HTTP response triggers one Gemini call. Input/configuration errors, network failures/timeouts without an HTTP response, malformed or truncated HTTP-200 output, and compilation/runtime failures do not trigger fallback. Gemini uses the same document/image context, conversation, and React instructions; responses pass through the same validation, compiler, and sandbox. If both providers fail, diagnostics retain the 0G HTTP status and identify the Gemini failure. No fake response is substituted.
+
+**Privacy:** Enabling fallback authorizes sending the same documents, conversation, and previous component to Google. 0G private routing does not apply to Gemini. Google’s free-tier terms may permit using submitted content for product improvement; see [Google pricing and data-use information](https://ai.google.dev/gemini-api/docs/pricing). Use fictional data for this demo. Provider/model, fallback status, request IDs, and available usage are displayed; 0GM price estimates are not applied to Gemini. Quota, billing, and model access depend on your Google account.
 
 ## Supported files
 
@@ -110,7 +125,7 @@ Tests use controlled provider responses; a live 0G run uses your configured key 
 
 ## Limits
 
-0G returns real React JSX in a JSON envelope (`title`, `reply`, `source`). The local backend uses esbuild to compile and bundle React; it does not execute the generated module. The browser runs the bundle in an iframe with only `allow-scripts`, an opaque origin, and a restrictive CSP. The generated preview has no access to the parent DOM/API key and ordinary network requests are blocked. Only React imports are allowed; write charts with SVG and styles with inline CSS. Arbitrary packages and external assets are not available. Export downloads `GeneratedApp.jsx`. Compilation errors retain the previous working preview; runtime errors appear in chat. Failed source/error context is sent on follow-ups so 0G can repair it. Source references, extracted numbers, and model calculations are not independently verified. Forecasts must label assumptions and estimated points. A local linear-trend helper is supplied only when a forecast is requested on the original `month,revenue_usd` sample schema; all other calculations are model-generated. This is a prototype, not an audited financial system.
+The responding provider returns real React JSX in a JSON envelope (`title`, `reply`, `source`). The local backend uses esbuild to compile and bundle React; it does not execute the generated module. The browser runs the bundle in an iframe with only `allow-scripts`, an opaque origin, and a restrictive CSP. The generated preview has no access to the parent DOM/API key and ordinary network requests are blocked. Only React imports are allowed; write charts with SVG and styles with inline CSS. Arbitrary packages and external assets are not available. Export downloads `GeneratedApp.jsx`. Compilation errors retain the previous working preview; runtime errors appear in chat. Failed source/error context is sent on follow-ups so 0G can repair it. Source references, extracted numbers, and model calculations are not independently verified. Forecasts must label assumptions and estimated points. A local linear-trend helper is supplied only when a forecast is requested on the original `month,revenue_usd` sample schema; all other calculations are model-generated. This is a prototype, not an audited financial system.
 
 Generated code is still untrusted: sandboxing does not prevent every browser resource-exhaustion issue, such as an infinite loop. Shared production execution needs stronger isolation and resource controls; use the deployment setup above for a limited demo.
 

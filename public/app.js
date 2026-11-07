@@ -80,7 +80,7 @@ function renderDashboard() {
   previewTimer=setTimeout(()=>{if($('preview-frame')===frame){$('status').textContent='The dashboard is taking longer to open. Inspect its React source or ask for a simpler version.';}},10000);
   $('schema').textContent=generated.source;
   $('preview-state').textContent='Dashboard ready';$('component-count').textContent='Sandboxed preview';
-  $('provenance').textContent=`${generated.meta.model} · private routing requested · Request ${generated.meta.responseId||generated.meta.requestId} · ${generated.meta.usage?.total_tokens??'?'} tokens${generated.meta.estimatedCostUsd!=null?' · estimated $'+generated.meta.estimatedCostUsd.toFixed(5):''}`;
+  $('provenance').textContent=`${generated.meta.provider||'0G'} · ${generated.meta.model} · ${generated.meta.trustMode==='private'?'private routing requested':'Google API · not 0G private inference'} · Request ${generated.meta.responseId||generated.meta.requestId} · ${generated.meta.usage?.total_tokens??'?'} tokens${generated.meta.estimatedCostUsd!=null?' · estimated $'+generated.meta.estimatedCostUsd.toFixed(5):''}`;
   $('export').disabled=false;
 }
 addEventListener('message',event=>{
@@ -90,7 +90,7 @@ addEventListener('message',event=>{
   if(event.data.type==='preview-error'){
     const text=typeof event.data.message==='string'?event.data.message.slice(0,1500):'Unknown runtime error';
     failedAttempt={source:generated.source,runtimeError:text};
-    recordDiagnostics({requestId:generated.meta.requestId,model:generated.meta.model,stage:'runtime',success:false});
+    recordDiagnostics({requestId:generated.meta.requestId,model:generated.meta.model,provider:generated.meta.provider,trustMode:generated.meta.trustMode,stage:'runtime',success:false});
     message('error','React runtime error: '+text);$('status').textContent='The dashboard could not be displayed. Ask the assistant to fix it.';
   }else{$('status').textContent='Your dashboard is ready. Ask a follow-up to refine it.';}
 });
@@ -128,20 +128,21 @@ $('prompt-form').onsubmit=async event=>{
   const prompt=$('prompt').value.trim();
   if(!documents.length){uploadStatus('Upload a file first.',true);return;}
   if(!prompt){$('status').textContent='Enter a message first.';return;}
-  setBusy(true);message('user',prompt);$('status').textContent='0G is analysing your files and creating your dashboard…';
+  setBusy(true);message('user',prompt);$('status').textContent='Creating your dashboard with 0G first; Gemini may be used if fallback is enabled…';
   try {
-    const result=await DocumentModel.generate({documents,prompt,history,previous:failedAttempt??generated?.source??null,signal:AbortSignal.timeout(200000),onDiagnostics:data=>recordDiagnostics(data,false)});
+    const result=await DocumentModel.generate({documents,prompt,history,previous:failedAttempt??generated?.source??null,signal:AbortSignal.timeout(280000),onDiagnostics:data=>recordDiagnostics(data,false)});
+    if(result.meta.fallbackFrom)message('assistant',`0G returned HTTP ${result.meta.primaryHttpStatus}. Gemini (${result.meta.model}) generated this answer instead; 0G private routing does not apply.`);
     $('status').textContent='Preparing your dashboard…';
     let javascript;
     const compileStarted=Date.now();
     try{javascript=await compileReact(result.source);}
     catch(error){
       failedAttempt={source:result.source,compilationError:error.message};
-      await recordDiagnostics({requestId:result.meta.requestId,model:result.meta.model,stage:'compile',success:false,durationMs:Date.now()-compileStarted});
+      await recordDiagnostics({requestId:result.meta.requestId,model:result.meta.model,provider:result.meta.provider,trustMode:result.meta.trustMode,stage:'compile',success:false,durationMs:Date.now()-compileStarted});
       throw error;
     }
     failedAttempt=null;
-    await recordDiagnostics({requestId:result.meta.requestId,model:result.meta.model,stage:'compile',success:true,durationMs:Date.now()-compileStarted});
+    await recordDiagnostics({requestId:result.meta.requestId,model:result.meta.model,provider:result.meta.provider,trustMode:result.meta.trustMode,stage:'compile',success:true,durationMs:Date.now()-compileStarted});
     generated={...result,javascript};history.push({role:'user',text:prompt},{role:'assistant',text:result.reply});history=history.slice(-8);
     renderDashboard();setTab(false);message('assistant',result.reply);$('prompt').value='';
     $('status').textContent='Opening your dashboard…';

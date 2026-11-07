@@ -31,3 +31,5 @@ The ASCII canvas now sits behind the full landing page rather than in an illustr
 ## Product copy
 
 Help text describes uploading, asking, and refining without developer setup instructions. The help dialog groups file limits, privacy/storage, implementation details, and diagnostics in expandable sections. Status and recovery messages work for hosted and local use; setup stays in README.md. Private routing is described as requested, provider retention claims are attributed to 0G, and server plaintext processing and metadata logging remain disclosed.
+
+Optional Gemini fallback is disclosed before generation and in the privacy details. Results identify the actual provider/model and label Gemini as outside 0G private inference. The chat explains the original 0G HTTP failure when fallback produces a result.

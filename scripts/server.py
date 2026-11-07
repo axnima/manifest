@@ -132,11 +132,11 @@ def save_diagnostics(data):
     if not isinstance(data, dict):
         raise ValueError('Diagnostics must be an object.')
     record = {'timestamp': datetime.now(timezone.utc).isoformat()}
-    for key in ['requestId', 'model', 'stage', 'responseId', 'providerStatus', 'blockReason', 'finishReason', 'failureReason', 'trustMode']:
+    for key in ['requestId', 'model', 'stage', 'responseId', 'providerStatus', 'blockReason', 'finishReason', 'failureReason', 'trustMode', 'provider', 'fallbackFrom']:
         value = data.get(key)
         if isinstance(value, str) and re.fullmatch(r'[A-Za-z0-9_.:-]{1,180}', value):
             record[key] = value
-    for key in ['documentCount', 'maxOutputTokens', 'httpStatus', 'candidateCount', 'promptTokenCount', 'candidatesTokenCount', 'thoughtsTokenCount', 'totalTokenCount', 'cachedContentTokenCount', 'outputCharacters', 'durationMs', 'prompt_tokens', 'completion_tokens', 'total_tokens', 'reasoning_tokens']:
+    for key in ['documentCount', 'maxOutputTokens', 'httpStatus', 'primaryHttpStatus', 'candidateCount', 'promptTokenCount', 'candidatesTokenCount', 'thoughtsTokenCount', 'totalTokenCount', 'cachedContentTokenCount', 'outputCharacters', 'durationMs', 'prompt_tokens', 'completion_tokens', 'total_tokens', 'reasoning_tokens']:
         value = data.get(key)
         if type(value) is int and 0 <= value <= 10**9:
             record[key] = value
@@ -174,11 +174,25 @@ class InferenceError(Exception):
         self.status = status
 
 
+def request_completion(url, body, key, provider, timeout):
+    headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key}
+    if provider == '0G':
+        headers['X-0G-Provider-Trust-Mode'] = 'private'
+    request = urllib.request.Request(url, data=json.dumps(body).encode(), headers=headers)
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            return response.status, response.read(2*1024*1024+1) if response.status == 200 else b''
+    except urllib.error.HTTPError as exc:
+        status = exc.code
+        exc.close()
+        return status, b''
+
+
 GENERATION_LOCK = threading.Lock()
 
 
 def generate_component(data):
-    diagnostic = {'requestId': str(uuid.uuid4()), 'stage': 'validation', 'trustMode': 'private', 'success': False}
+    diagnostic = {'requestId': str(uuid.uuid4()), 'stage': 'validation', 'trustMode': 'private', 'provider': '0G', 'success': False}
     started = time.monotonic()
     try:
         def bounded(value, maximum, label):
@@ -251,32 +265,42 @@ def generate_component(data):
             {'role': 'system', 'content': (ROOT / 'scripts/instructions.txt').read_text()},
             {'role': 'user', 'content': [{'type': 'text', 'text': json.dumps(context)}, *images] if images else json.dumps(context)}],
             'response_format': {'type': 'json_object'}, 'max_tokens': 6000, 'temperature': 0.3, 'stream': False}
-        request = urllib.request.Request(base + '/chat/completions', data=json.dumps(body).encode(), headers={
-            'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key, 'X-0G-Provider-Trust-Mode': 'private'})
+        provider = '0G'
         diagnostic['stage'] = 'http'
         try:
-            with urllib.request.urlopen(request, timeout=180) as response:
-                diagnostic['httpStatus'] = response.status
-                raw = response.read(2*1024*1024+1)
-        except urllib.error.HTTPError as exc:
-            diagnostic['httpStatus'] = exc.code
-            exc.close()
-            messages = {400: '0G rejected the request. Check model and JSON-mode support.', 401: '0G rejected the API key. Check ZERO_G_API_KEY.',
-                403: '0G access denied. Check key permissions.', 404: '0G model not found. Check ZERO_G_MODEL.',
-                402: '0G balance is insufficient. Check your compute credits.', 429: '0G usage limit reached. Retry later.',
-                503: 'No private provider is available for this model, or the provider is temporarily unavailable.'}
-            raise InferenceError(f'0G HTTP {exc.code}: ' + messages.get(exc.code, 'Provider unavailable. No automatic retry was made.')) from None
+            status, raw = request_completion(base + '/chat/completions', body, key, provider, 180)
+            diagnostic['httpStatus'] = status
+            fallback_key = os.environ.get('GEMINI_API_KEY', '').strip()
+            if status != 200 and fallback_key:
+                diagnostic['primaryHttpStatus'] = status
+                model = os.environ.get('GEMINI_MODEL', 'gemini-3.8-flash').strip()
+                if not re.fullmatch(r'[A-Za-z0-9_.-]{1,180}', model):
+                    raise InferenceError('Invalid GEMINI_MODEL configuration.', 503)
+                provider = 'Gemini'
+                diagnostic.pop('httpStatus', None)
+                diagnostic.update(provider=provider, model=model, trustMode='standard', fallbackFrom='0G', maxOutputTokens=16384)
+                body = {**body, 'model': model, 'max_tokens': 16384}
+                status, raw = request_completion('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', body, fallback_key, provider, 60)
+                diagnostic['httpStatus'] = status
+            if status != 200:
+                if provider == 'Gemini':
+                    raise InferenceError(f'0G HTTP {diagnostic["primaryHttpStatus"]}; Gemini fallback HTTP {status}. Check Gemini model access, API key, quota, and billing. No further retry was made.')
+                messages = {400: '0G rejected the request. Check model and JSON-mode support.', 401: '0G rejected the API key. Check ZERO_G_API_KEY.',
+                    403: '0G access denied. Check key permissions.', 404: '0G model not found. Check ZERO_G_MODEL.',
+                    402: '0G balance is insufficient. Check your compute credits.', 429: '0G usage limit reached. Retry later.',
+                    503: 'No private provider is available for this model, or the provider is temporarily unavailable.'}
+                raise InferenceError(f'0G HTTP {status}: ' + messages.get(status, 'Provider unavailable. No automatic retry was made.'))
         except (urllib.error.URLError, TimeoutError, socket.timeout):
-            raise InferenceError('Could not reach 0G or inference timed out. No automatic retry was made; a timed-out run may still be charged.') from None
+            raise InferenceError(f'Could not reach {provider} or inference timed out. No automatic retry was made; a timed-out run may still be charged.') from None
         if len(raw) > 2*1024*1024:
-            raise InferenceError('0G response exceeded the size limit.')
+            raise InferenceError(f'{provider} response exceeded the size limit.')
         diagnostic['stage'] = 'response_json'
         try:
             result = json.loads(raw)
         except ValueError:
-            raise InferenceError('0G returned unreadable JSON.') from None
+            raise InferenceError(f'{provider} returned unreadable JSON.') from None
         if not isinstance(result, dict):
-            raise InferenceError('0G returned an invalid response.')
+            raise InferenceError(f'{provider} returned an invalid response.')
         diagnostic['responseId'] = result.get('id')
         usage = result.get('usage', {})
         if isinstance(usage, dict):
@@ -292,31 +316,31 @@ def generate_component(data):
         diagnostic['stage'] = 'finish_reason'
         if candidate.get('finish_reason') != 'stop':
             if candidate.get('finish_reason') == 'length':
-                raise InferenceError('0G reached the output-token limit (MAX_TOKENS). Ask for a smaller component. No partial result was rendered.')
-            raise InferenceError('0G stopped or blocked generation without a complete component.')
+                raise InferenceError(f'{provider} reached the output-token limit (MAX_TOKENS). Ask for a smaller component. No partial result was rendered.')
+            raise InferenceError(f'{provider} stopped or blocked generation without a complete component.')
         message = candidate.get('message', {})
         output = message.get('content') if isinstance(message, dict) else None
         diagnostic['stage'] = 'react_json'
         try:
             layout = json.loads(output)
         except (ValueError, TypeError):
-            raise InferenceError('0G did not return valid React response JSON.') from None
+            raise InferenceError(f'{provider} did not return valid React response JSON.') from None
         if not isinstance(layout, dict):
-            raise InferenceError('0G returned an invalid React module.')
+            raise InferenceError(f'{provider} returned an invalid React module.')
         title = bounded(layout.get('title'), 480, 'component title')
         reply = bounded(layout.get('reply'), 16000, 'component reply')
         source = bounded(layout.get('source'), 200*1024, 'React source')
         if len(title) > 120 or len(reply) > 4000:
-            raise InferenceError('0G returned an oversized title or reply.')
+            raise InferenceError(f'{provider} returned an oversized title or reply.')
         diagnostic.update(stage='complete', success=True, outputCharacters=len(output))
         # shortcut: current promotional 0GM rates; verify catalog prices before production billing.
         estimate = None
-        if model.lower() in {'0gm-1.0', '0gm-1.0-35b-a3b'} and 'prompt_tokens' in diagnostic and 'completion_tokens' in diagnostic:
+        if provider == '0G' and model.lower() in {'0gm-1.0', '0gm-1.0-35b-a3b'} and 'prompt_tokens' in diagnostic and 'completion_tokens' in diagnostic:
             estimate = round((diagnostic['prompt_tokens']*.08 + diagnostic['completion_tokens']*.48)/1000000, 8)
         return 200, {'title': title, 'reply': reply, 'source': source, 'meta': {
-            'requestId': diagnostic['requestId'], 'provider': '0G', 'model': model,
+            'requestId': diagnostic['requestId'], 'provider': provider, 'model': model,
             'responseId': result.get('id') if isinstance(result.get('id'), str) else None,
-            'trustMode': 'private', 'sources': [d['name'] for d in sources], 'usage': {k: diagnostic[k] for k in ('prompt_tokens', 'completion_tokens', 'total_tokens', 'reasoning_tokens') if k in diagnostic},
+            'trustMode': diagnostic['trustMode'], 'fallbackFrom': diagnostic.get('fallbackFrom'), 'primaryHttpStatus': diagnostic.get('primaryHttpStatus'), 'sources': [d['name'] for d in sources], 'usage': {k: diagnostic[k] for k in ('prompt_tokens', 'completion_tokens', 'total_tokens', 'reasoning_tokens') if k in diagnostic},
             'estimatedCostUsd': estimate, 'generatedAt': datetime.now(timezone.utc).isoformat()}, 'diagnostics': diagnostic}
     except InferenceError as exc:
         return exc.status, {'error': str(exc), 'diagnostics': diagnostic}
